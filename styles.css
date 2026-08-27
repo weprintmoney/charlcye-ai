@@ -286,6 +286,121 @@ footer a:hover {
   border-bottom-color: var(--accent);
 }
 
+/* Subscribe (Merge Conflict CTA) */
+
+.subscribe {
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 1.5rem 1.5rem 1.4rem;
+  max-width: 520px;
+}
+
+.subscribe-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+
+.subscribe-lede {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  line-height: 1.45;
+  color: var(--text);
+  margin-bottom: 1.1rem;
+}
+
+.subscribe-form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.subscribe-form input[type="email"] {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.15s ease;
+}
+
+.subscribe-form input[type="email"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.subscribe-form button {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.65rem 1.15rem;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.subscribe-form button:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.subscribe-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.7rem;
+}
+
+.subscribe-note a {
+  color: var(--muted);
+  border-bottom: 1px solid var(--border-strong);
+  text-decoration: none;
+}
+
+.subscribe-note a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Placement variants */
+
+.hero .subscribe {
+  margin-top: 2.25rem;
+}
+
+.section .subscribe {
+  margin-top: 2.5rem;
+}
+
+.subscribe-footer {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  max-width: none;
+  margin-bottom: 2.5rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.subscribe-footer .subscribe-form {
+  max-width: 520px;
+}
+
+.paper-body .subscribe {
+  margin-top: 3rem;
+}
+
 /* Paper pages */
 
 .paper-main {
