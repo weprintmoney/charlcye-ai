@@ -129,6 +129,10 @@ main {
   line-height: 1.7;
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
 .pitch {
   font-family: var(--serif);
   font-size: 1.35rem;
