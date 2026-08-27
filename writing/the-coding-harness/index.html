@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Coding Harness — Charlcye Mitchell</title>
+  <meta name="description" content="Every workflow, hook, guardrail, and readiness gate named. The implementation companion to Context, Loops, Graphs." />
+  <meta name="author" content="Charlcye Mitchell" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="The Coding Harness" />
+  <meta property="og:description" content="Every workflow, hook, guardrail, and readiness gate named. The implementation companion to Context, Loops, Graphs." />
+  <meta property="og:url" content="https://charlcye.ai/writing/the-coding-harness/" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="The Coding Harness" />
+  <meta name="twitter:description" content="Every workflow, hook, guardrail, and readiness gate named. The implementation companion to Context, Loops, Graphs." />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+  <nav class="site-nav">
+    <div class="site-nav-inner">
+      <a class="site-nav-brand" href="/">Charlcye Mitchell</a>
+      <ul class="site-nav-links">
+        <li><a href="/#writing">Writing</a></li>
+        <li><a href="/#work">Work</a></li>
+        <li><a href="/#connect">Connect</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="paper-main">
+    <article class="paper">
+
+      <header class="paper-header">
+        <p class="eyebrow">IMPLEMENTATION COMPANION</p>
+        <h1>The Coding Harness</h1>
+        <p class="paper-subtitle">The phase-by-phase build order — L1-0 through L3-6.</p>
+        <p class="paper-byline">
+          By <a href="https://linkedin.com/in/camitchell">Charlcye Mitchell</a>
+          — Director of Engineering Operations, agentic systems architect,
+          field notes writer.
+        </p>
+      </header>
+
+      <div class="paper-body">
+<blockquote>
+<p><strong>THE WHOLE PAPER IN FOUR LINES</strong></p>
+<ol type="1">
+<li>This is the three-level build from <em>Context, Loops, Graphs</em> end-to-end: a single source of truth (Level 1), at least one production loop (Level 2), and a self-improving coding harness on top of them (Level 3). Each level pays for itself alone; every phase inside a level produces value alone.</li>
+<li>Build in phases L1-0 → L3-6. Skipping produces confident garbage — in the coding harness that means confident garbage in production code, which costs more than confident garbage in a draft email.</li>
+<li>You need no new infrastructure. GitHub, git, CI, and Claude Code carry the whole system. The load-bearing decisions are the ones you’d think are boring.</li>
+<li>Autonomy is earned per ticket-class, monitored continuously, and revoked on failure. The humans aren’t in the loop as a courtesy. They’re the reason it works.</li>
+</ol>
+</blockquote>
+<hr />
+<h2 id="who-this-is-for">Who this is for</h2>
+<p>You’ve read <em>Context, Loops, Graphs</em> and you want the build order for all three levels — the context store, the first production loop, and the coding harness that sits on top of them. You’re an engineer — or a founder with the keys — at a five-to-fifty-person company. Claude Code is available to the team.</p>
+<p>The levels build on each other. Do not skip. Building the coding harness before you have a knowledge base is how you build an agent that confidently opens PRs that contradict your own ADRs.</p>
+<h2 id="how-to-read-this">How to read this</h2>
+<p>There’s an engineer’s read and an agent’s read. Both work.</p>
+<p><strong>Engineer:</strong> you’ll implement it yourself. Skim “The infrastructure choices that actually matter” below first — it explains why the boring parts stay boring across all three levels. Then read the Level 1 build carefully; Levels 2 and 3 unlock from there.</p>
+<p><strong>Agent:</strong> hand this document to Claude Code with access to your repos. There’s a script at the end — inventory the gaps against your codebase, present them to a human, then implement phase-by-phase from L1-0 to L3-6. Every phase has a readiness gate; stop at each one and get explicit sign-off.</p>
+<hr />
+<h2 id="the-infrastructure-choices-that-actually-matter">The infrastructure choices that actually matter</h2>
+<p>Every decision in this build has a shiny alternative someone is being paid to sell. Here’s why we picked the ones we did. Disagree specifically if you want — but understand what these choices are doing before swapping them out. Every choice below applies to all three levels; the coding harness inherits every decision the context store and the first loop already made.</p>
+<h3 id="github-not-obsidian-or-notion-or-confluence">GitHub, not Obsidian (or Notion, or Confluence)</h3>
+<p>The context store is a git repo. Not a wiki, not a knowledge platform, not a Notion workspace, not an Obsidian vault. This is the single most consequential choice in the system, and it looks the most boring.</p>
+<p>What git gives you that a wiki doesn’t:</p>
+<ul>
+<li><strong>CODEOWNERS.</strong> A one-line file that says positioning changes need the head of marketing, invariants need the eng lead — enforced by CI, not by hope. In Obsidian, ownership is a convention people forget within a quarter.</li>
+<li><strong>Onboarding and offboarding through org membership.</strong> A new hire gets access with one <code>gh</code> command. A departure loses access with another. You don’t discover six months later that the former head of sales still has edit rights to the pricing doc.</li>
+<li><strong>Pull requests as the accuracy gate.</strong> Every change to shared truth passes through review. Crucially, this is <em>the same mechanism agents use to write to the same store</em> — so human freshness enforcement and agent-write safety are one system, not two.</li>
+<li><strong>CI as the enforcement surface.</strong> Frontmatter checks, index checks, staleness detection all run as required checks. In Obsidian, checks are a plugin you asked one person to install.</li>
+<li><strong>Diffs, branches, and history by default.</strong> You can see what the doc said the morning of an incident. You can revert. You can blame. Wiki edit histories are a courtesy; git history is a system.</li>
+</ul>
+<p>The one thing wikis are genuinely better at is search UI. If your team keeps hitting that pain, you don’t have a wiki problem — you have an index problem. Fix the folder briefs before you migrate.</p>
+<h3 id="github-actions-not-langgraph-or-temporal-or-airflow">GitHub Actions, not LangGraph (or Temporal, or Airflow)</h3>
+<p>Every stage in every level of this build is a workflow. Every handoff is a commit. Every approval gate is a pull request. The orchestrator is CI.</p>
+<p>You will be told this is naive. It isn’t. It’s what CLG’s Level 3 argued for, and it holds up in production because:</p>
+<ul>
+<li><strong>Your team already knows it.</strong> Debugging a LangGraph run means learning LangGraph’s state model. Debugging a workflow means reading YAML and clicking into the run — every engineer on the team can do it on day one.</li>
+<li><strong>State is inspectable.</strong> Every stage’s output is a file, diffable and versioned. LangGraph’s state is in a database you’ll build a UI for.</li>
+<li><strong>Approval gates are already a review UI.</strong> A PR is a shared, familiar, comment-able surface. Rebuilding one inside an orchestration framework is its own quarterly project.</li>
+<li><strong>Access control is free.</strong> GitHub already knows who can approve what. Adding orchestration adds a second permission model to keep in sync.</li>
+<li><strong>Audit is free.</strong> Every action is a workflow-run URL plus a commit SHA. At 2 a.m. you’re not paging into someone else’s dashboard.</li>
+</ul>
+<p>You’ll want a real orchestrator when state files contend so often that rebase-retries are your bottleneck, when queries span too many hops, or when inter-stage latency actually matters. Adopt one <em>then</em>, with data. Not because a diagram suggested you would.</p>
+<h3 id="frontmatter-a-compiled-graph.json-not-a-graph-database">Frontmatter + a compiled graph.json, not a graph database</h3>
+<p>The knowledge graph is compiled from YAML frontmatter on documents that already exist. It ships as a <code>graph.json</code> file in the repo. No Neo4j, no separate node store, no vector DB — yet.</p>
+<p>Why not just spin up Neo4j and get proper graph queries?</p>
+<ul>
+<li><strong>Two sources of truth is one too many.</strong> If the graph lives outside the docs, they drift. They always drift.</li>
+<li><strong>Frontmatter is human-editable in the same PR as the decision.</strong> An ADR author declares <code>depends_on: [D-042]</code> while writing the decision. In a graph DB, the author has to remember to update a second system. Half the time they won’t.</li>
+<li><strong>CI compiles it on push.</strong> <code>scripts/build-graph.py</code> regenerates and validates on every merge; broken edges fail the build. That is the entire graph platform.</li>
+<li><strong>You can grep it.</strong> When something is off, <code>jq</code> on <code>graph.json</code> finds it in a minute. Debugging a graph DB query starts with connecting to the graph DB.</li>
+</ul>
+<p>Graduate to a graph store when you have thousands of nodes and traversal queries actually take too long. That will be later than you think.</p>
+<h3 id="git-as-the-state-store-not-redis-or-dynamodb-or-a-queue-service">git as the state store, not Redis (or DynamoDB, or a queue service)</h3>
+<p>Pipeline state — the outbound loop’s <code>leads/</code> directories, the coding harness’s queue claims, autonomy ledger, and release findings — lives in files in the repo that owns them. JSON. Writes go through a composite action (or a rebase-and-retry loop) that does read-hash → write → rebase-on-conflict.</p>
+<ul>
+<li><strong>Every state change is versioned and diffable.</strong> You can look at last Tuesday’s queue and see who claimed what.</li>
+<li><strong>Rollback is <code>git revert</code>.</strong> Not a runbook.</li>
+<li><strong>Concurrent writes resolve mechanically.</strong> The hash-check + rebase loop is thirty lines of shell. A database gives you transactions; this gives you audit history for free.</li>
+<li><strong>No new secret, no failover story.</strong> The state store is the same repo the workflows already push to.</li>
+</ul>
+<p>Migrate to a real datastore when write contention on a state file becomes your bottleneck. Instrument the retry counter first. If it’s under three most days, you don’t have that problem.</p>
+<h3 id="claude-code-skills-in-markdown-not-a-prompt-management-platform">Claude Code skills in markdown, not a prompt-management platform</h3>
+<p>Every reusable agent behavior — QA runners, review checklists, the senior-reviewer perspective, the spec drafter, the qualifier critic, the copy evaluator — is a markdown file under <code>.claude/agents/</code> or <code>agents/</code>. They live in the same repo humans read. They pass through the same PR review. The dream loop proposes edits to them via PR; humans approve.</p>
+<p>Prompt-management platforms pull prompt authoring out of the docs repo and into a UI where fewer people see them and no one owns them. The whole thesis of <em>Context, Loops, Graphs</em> is that expertise belongs in artifacts your team already reviews. A prompt platform undoes that.</p>
+<h3 id="json-schemas-a-fixtures-folder-not-an-eval-platform">JSON Schemas + a fixtures folder, not an eval platform</h3>
+<p>Every inter-stage contract is a JSON Schema in <code>schemas/</code>. Every judge is regression-tested against fixtures in <code>evals/</code> — historical items with known verdicts, one JSON file per fixture, with date placeholders expanded at run time so freshness-sensitive fixtures don’t rot. Both live in the repo. The runner is <code>pytest</code> (or a light Python harness).</p>
+<p>Eval platforms are useful eventually. They give you dashboards, dataset versioning, comparison views. At sub-fifty-person scale they mostly give you another SaaS bill and one more system to onboard people to. Migrate when the golden sets are big enough that regenerating them locally takes minutes, or when you have enough eval jobs that a dashboard is actually shorter than reading run logs.</p>
+<h3 id="a-bot-account-with-narrow-pats-not-a-github-app">A bot account with narrow PATs, not a GitHub App</h3>
+<p>Fine-grained PATs, one per capability, each scoped to the minimum permission it needs. The dream loop’s write token is the <em>only</em> token with internal-docs write access. The implementer never sees it. The release-intelligence miner reads and cannot write.</p>
+<p>GitHub Apps are the “right” long-term answer — installation-scoped tokens, better rate limits, cleaner audit trail. They also require an app registration flow, a JWT signer, and a webhook server if you want events. Pre-Series-B, narrow PATs with rotation are enough. Migrate when you’re managing more than a handful.</p>
+<h3 id="claude--p-in-a-workflow-not-a-hosted-agent-service">Claude <code>-p</code> in a workflow, not a hosted agent service</h3>
+<p>Every agent run is <code>claude -p --allowedTools &lt;whitelist&gt;</code> inside a GitHub Actions job. The tool whitelist is the security boundary. The workflow is the retry, timeout, and log capture.</p>
+<p>A hosted agent service adds a control plane, a second billing surface, a new failure mode when it’s degraded, and a place your prompts and traces live outside your repo. <code>claude -p</code> in a workflow does the job with your existing runners and one API key. Adopt a hosted service when you need cross-team agent coordination or long-running background jobs a workflow’s six-hour ceiling can’t hold.</p>
+<h3 id="slack-for-ops-not-pagerduty-yet">Slack for ops, not PagerDuty (yet)</h3>
+<p>One ops/alerts channel absorbs pipeline noise. One leadership channel receives nothing automated. Ever. The heartbeat lives in ops; leadership hears from a human.</p>
+<p>PagerDuty when you’re running production infrastructure with an on-call rotation. Slack until then. The failure mode you’re trying to avoid is a heartbeat alert waking your CEO; the fix is channel routing, not another tool.</p>
+<hr />
+<h2 id="the-build-order">The build order</h2>
+<p>Level 1 is a slow-cook, most of it convention-setting and organizational buy-in. Level 2 goes fast — everything Level 1 installed makes the safeguards, the grounding, and the enforcement almost free. Level 3, the coding harness itself, is infrastructure plus the earned-autonomy runway on top. You do not skip levels. Every phase’s readiness gate is the entrance ticket to the next.</p>
+<hr />
+<h2 id="the-level-1-build-the-context-store">The Level 1 build · The context store</h2>
+<h3 id="l1-0-domain-taxonomy-mintlify-shell-codeowners">L1-0 · Domain taxonomy, Mintlify shell, CODEOWNERS</h3>
+<p><strong>Repo: internal-docs (new). Mostly writing.</strong></p>
+<p>One repo. Not a wiki, not a Notion workspace, not a shared drive with a folder structure someone drew on a whiteboard. Mintlify from day one — <code>docs.json</code>, <code>astro.config.mjs</code>, <code>src/</code> — so the SSOT could also serve the public docs site with no separate publishing pipeline.</p>
+<p>Numbered domain folders at the root, in the order a reader would traverse them:</p>
+<ul>
+<li><code>01-market-intelligence/</code> — ICP, buyer personas, positioning, competitive landscape, threat intel, regulatory signals</li>
+<li><code>02-brand/</code> — brand kit, voice-eval rubric</li>
+<li><code>03-commercial-revenue/</code> — accounts, sales playbook, sequences, <code>rubrics/</code></li>
+<li><code>04-marketing/</code> — content ops, decks, claims-vetted table</li>
+<li><code>05-product-technical/</code> — cohorts, docs-ops, market updates</li>
+<li><code>06-operational/</code> — decision log, processes, quarterly reviews, <code>provenance-ledger.ndjson</code>, <code>rhythm-config.yaml</code></li>
+<li><code>07-engineering-docs/</code> — ADRs, backing-stores, service/core/SDK docs, postmortems, specs</li>
+<li><code>08-team-culture/</code> — code review, mode-tag framework, QA philosophy</li>
+<li>Grounding folders alongside: <code>getting-started/</code>, <code>team/</code>, <code>decisions/</code>, <code>docs-audit/</code>, <code>images/</code></li>
+</ul>
+<p><code>CODEOWNERS</code> routes every folder to a single accountable person. Brand and product to the CEO plus the engineering lead. Market intelligence and marketing to the PM. Commercial and partnerships to sales. This is one file. Enforced by required reviews on every PR. Ownership stops being a convention that decays; it starts being a check that fails.</p>
+<p>A <code>CLAUDE.md</code> at the root, loaded on every session, points to the folder briefs. A <code>CLAUDE.md</code> per folder, capped at ~500 lines, is the doc-index brief for that domain — short enough to load into a fresh session, structured enough that an agent can route from the root to the right document in three hops or fewer. If it can’t, the brief is broken, not the query.</p>
+<p>Contents were drafted by mining what already existed. Meeting transcripts held the positioning debates and their resolutions. PR-comment history held the senior engineers’ actual review standards, stated one correction at a time. Sales calls, existing ADRs, and support threads held the rest. The AI drafted; humans reviewed and approved on every PR. Curation was human. Transcription of expertise mostly wasn’t.</p>
+<blockquote>
+<p><strong>You’d think you sit your experts down to write docs.</strong> You don’t. You mine what they’ve already produced. Every one of the domain folders above filled from existing corpus — transcripts, comments, decisions — before any expert was asked to write anything from scratch.</p>
+</blockquote>
+<p><strong>Readiness gate for L1-1:</strong> A fresh Claude session with no prior context can answer a substantive positioning or product question from the SSOT alone and cite the documents it read.</p>
+<h3 id="l1-1-frontmatter-hooks-and-the-.claude-harness">L1-1 · Frontmatter, hooks, and the .claude/ harness</h3>
+<p><strong>Repo: internal-docs. Most of the work is convention-setting.</strong></p>
+<p>Frontmatter schema on every document that participates in anything downstream:</p>
+<ul>
+<li><code>title</code>, <code>description</code> — one line each</li>
+<li><code>owner</code> — single accountable person, mandatory</li>
+<li><code>status</code> — <code>draft | review | approved | archived</code></li>
+<li><code>last_reviewed</code> — ISO date; used by ownership pings</li>
+</ul>
+<p>Nothing else about the schema is negotiable. Everything downstream — freshness alerts, routing, the graph in L3-1 of the coding harness — reads these fields.</p>
+<p>The <code>.claude/</code> harness lives in the same repo as the docs it enforces. Top-level layout:</p>
+<ul>
+<li><code>agents/</code> — sub-agent prompts. The load-bearing one is a persona reviewer that codifies the CEO’s PR-review voice (see below).</li>
+<li><code>commands/</code> — a dozen slash commands including <code>capture-call</code>, <code>capture-meeting</code>, <code>competitive-intel</code>, <code>review</code>, <code>sync-sdks</code>.</li>
+<li><code>hooks/</code> — six PreToolUse/PostToolUse hooks, listed below.</li>
+<li><code>indexes/</code> — five YAML lookup tables (<code>accounts.yaml</code>, <code>competitors.yaml</code>, <code>customer-environments.yaml</code>, <code>decisions.yaml</code>, <code>features.yaml</code>) that other repos load for cross-repo reference without a graph DB.</li>
+<li><code>rules/</code> — the frontmatter schema, the doc-index rule, the provenance rule, the feature-bucket-mapping rule.</li>
+<li><code>skills/</code> — fourteen engineering skills including <code>build-core</code>, <code>cpp-qa</code>, <code>openapi-sdk-regen</code>, <code>release-kickoff</code>, <code>pr-review</code>.</li>
+<li><code>team-memory/</code> — the shared corpus, gated (see below).</li>
+<li>Config: <code>meta-conventions.md</code>, <code>slack-channels.md</code>, <code>settings.json</code>.</li>
+</ul>
+<p>The hooks that made the store safe for agents:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Hook</th>
+<th>Type</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enforce-kebab-case.sh</code></td>
+<td>PreToolUse</td>
+<td>Filename enforcement; dotfiles and <code>CLAUDE.md</code> exempt. Naming drift kills grep, which kills every downstream lookup.</td>
+</tr>
+<tr>
+<td><code>block-push-main.sh</code></td>
+<td>PreToolUse</td>
+<td>Every change to shared truth flows through a PR. Direct pushes are blocked at the client, not just at the branch protection.</td>
+</tr>
+<tr>
+<td><code>require-team-frontmatter.sh</code></td>
+<td>PreToolUse</td>
+<td>Writes to <code>team-memory/</code> must carry <code>team_relevant: true</code> plus a <code>why_team:</code> sentence. If you can’t articulate why the memory is shared, it goes to personal instead.</td>
+</tr>
+<tr>
+<td><code>block-personal-memory.sh</code></td>
+<td>PreToolUse</td>
+<td>The inverse: writes to personal auto-memory paths are blocked in the shared repo.</td>
+</tr>
+<tr>
+<td><code>require-workflow-provenance.sh</code></td>
+<td>PreToolUse</td>
+<td>New GitHub Actions workflows that don’t call the shared <code>agent-provenance</code> action are blocked. Opt-out marker <code>claude-no-provenance</code> for rare exceptions.</td>
+</tr>
+<tr>
+<td><code>lasso/post-tool-defender.py</code></td>
+<td>PostToolUse</td>
+<td>Prompt-injection scanner on Read/WebFetch/Bash/Grep/Task. Warns, never blocks. External content is data, not instruction.</td>
+</tr>
+<tr>
+<td><code>log-skill-usage.sh</code></td>
+<td>UserPromptSubmit</td>
+<td>Slash-command usage log written outside the repo for later prompt-caching audits.</td>
+</tr>
+</tbody>
+</table>
+<p>The persona PR reviewer — a sub-agent under <code>.claude/agents/</code> — codifies the CEO’s PR-review voice. The reason it exists: on this team the CEO averaged seven blunt PR comments per review while the rest of the team gave the CEO’s PRs almost none. The bot fills the asymmetry. Every PR gets a persona review before any human touches it. When the team disagrees, they push back on the bot, which is a much cheaper argument than pushing back on the CEO.</p>
+<p>Feature-index YAMLs in <code>.claude/indexes/</code> are the mechanism for cross-repo reference. When engineering docs describe a feature, its <code>graph_id</code> is recorded in <code>features.yaml</code> alongside the home file. Agents in other repos (sales-ops, agent-ops later) load these indexes for grounded lookup without any graph database.</p>
+<p>The retired-claim guard and the blocked-name grep are enforced here, not later:</p>
+<ul>
+<li><code>04-marketing/content-ops/reference/claims-vetted.md</code> holds the vetted phrase list plus a “Retired claims” table.</li>
+<li>A grep-based CI check on the public site fails any build that reintroduces a retired phrase.</li>
+<li><code>schemas/blocked-names.json</code> (referenced from CI on every external-facing repo) is a name list — target accounts, confidential relationships — that can’t appear in anything the outside world sees.</li>
+</ul>
+<blockquote>
+<p><strong>You’d think a rule saying “declare owners” is enough.</strong> It isn’t. The hook that fails the tool call when a document lacks an owner is. Every one of the rules above is enforced at the moment of writing, not documented in a wiki no one rereads.</p>
+</blockquote>
+<p><strong>Readiness gate for L1-2:</strong> every document carries frontmatter with an owner; the seven hooks are wired and blocking on real PRs; the persona PR reviewer runs on every SSOT PR and the team is comfortable being reviewed by a bot before a human sees the diff.</p>
+<h3 id="l1-2-read-only-ops-loops-provenance-drift-review">L1-2 · Read-only ops loops, provenance, drift review</h3>
+<p><strong>Repo: internal-docs (workflows + scripts).</strong></p>
+<p>Sixteen read-only workflows shipped as a single autonomous-GTM batch. Every one grounds against the SSOT. Every one posts to a dedicated ops channel — never the leadership channel. Every one has a heartbeat that alerts on absence-of-output, not just on error.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Cadence</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cve-monitor.yml</code></td>
+<td>Weekly</td>
+<td>Scans NVD for CVEs matching the product’s stack</td>
+</tr>
+<tr>
+<td><code>aeo-monitoring.yml</code> + <code>aeo-gap-remediation.yml</code></td>
+<td>Weekly</td>
+<td>AI answer-engine scans; auto-drafts FAQ PRs on gap</td>
+</tr>
+<tr>
+<td><code>regulatory-monitor.yml</code></td>
+<td>Weekly</td>
+<td>Regulatory + government signal scan</td>
+</tr>
+<tr>
+<td><code>conference-tracker.yml</code></td>
+<td>Weekly</td>
+<td>Speaking / sponsorship / CFP signal scan</td>
+</tr>
+<tr>
+<td><code>rfp-monitor.yml</code></td>
+<td>Weekly</td>
+<td>SAM.gov + private RFP signals</td>
+</tr>
+<tr>
+<td><code>weekly-competitive-signals.yml</code></td>
+<td>Weekly</td>
+<td>Competitor moves consolidated into a digest</td>
+</tr>
+<tr>
+<td><code>weekly-engineering-signals.yml</code></td>
+<td>Weekly</td>
+<td>Public repo activity + hiring signals in the category</td>
+</tr>
+<tr>
+<td><code>external-activity-digest.yml</code></td>
+<td>Daily</td>
+<td>Product/company mentions consolidated</td>
+</tr>
+<tr>
+<td><code>product-market-updates.yml</code></td>
+<td>Weekly</td>
+<td>ICP-facing category shifts</td>
+</tr>
+<tr>
+<td><code>weekly-digest.yml</code></td>
+<td>Weekly</td>
+<td>Meta-digest that summarizes the digests</td>
+</tr>
+<tr>
+<td><code>health-map.yml</code></td>
+<td>Weekly</td>
+<td>Topic-cluster refresh across the docs</td>
+</tr>
+<tr>
+<td><code>pr-review-digest.yml</code></td>
+<td>Weekly</td>
+<td>Summary of PR feedback patterns across the org</td>
+</tr>
+<tr>
+<td><code>claude-updates-digest.yml</code></td>
+<td>Fri noon</td>
+<td>Anthropic + Claude release digest</td>
+</tr>
+<tr>
+<td><code>cwc-playlist-monitor.yml</code></td>
+<td>Monthly</td>
+<td>Category YouTube playlist watch</td>
+</tr>
+<tr>
+<td><code>docs-drift-review.yml</code></td>
+<td>Weekly</td>
+<td>Compares public docs against source; opens PR on drift</td>
+</tr>
+<tr>
+<td><code>blog-auto-draft.yml</code> + <code>blog-publisher.yml</code> + <code>blog-hero-image-autogen.yml</code></td>
+<td>Ad hoc</td>
+<td>Draft → schedule → hero image for public-site posts</td>
+</tr>
+</tbody>
+</table>
+<p>Long-running-agent state lives on <code>bot/*</code> branches, force-pushed to handle non-fast-forward divergence from concurrent runs. Not elegant. But <code>git log</code> on a <code>bot/*</code> branch is a complete audit of every run, and the branch pattern keeps every stateful mutation out of <code>main</code> until a human reviews the resulting PR.</p>
+<p><strong>Attribution and provenance.</strong> Every agent commit in this repo carries a provenance trailer: which agent, which workflow run, triggered by whom. Interactive and headless runs use split conventions so the trailers stay parseable. A shared reusable action <code>agent-provenance</code> re-authors the commit to the bot identity and appends the trailer. The <code>require-workflow-provenance.sh</code> hook blocks any new workflow that doesn’t call this action. For public-facing repos, a <code>footprint-scan</code> job strips Claude attribution from commit messages, PR bodies, and code comments before the PR opens.</p>
+<p><strong>The rhythm dashboard</strong> (<code>scripts/generate-rhythm-dashboard.py</code>, PEP-723 inline deps + <code>uv run</code>) is the weekly PR × OKR tracker. Every open PR across the org gets mapped to its motivating OKR from <code>06-operational/</code>, rendered to a static <code>rhythm-dashboard.html</code>, deployed to Cloudflare Pages, and Slack-linked. It’s the single-page view of “is the work matching the plan,” and the answer often surprises everyone.</p>
+<p><strong>Meeting-notes ingest</strong> (<code>granola-meeting-sync.yml</code>, daily 12:00 UTC) pulls yesterday’s meeting notes via the official API, summarizes each into decisions and action items, and files them with frontmatter into <code>06-operational/</code>. <code>attio-call-sync.yml</code> pushes the same transcripts into the CRM so account timelines stay complete.</p>
+<p><strong>Deploy layer.</strong> <code>deploy.yml</code> publishes the SSOT / public docs to Cloudflare Pages. Provisioning note: the Cloudflare account is a bus-factor risk if it lives under a founder’s personal login rather than an org — worth resolving before it becomes an incident.</p>
+<blockquote>
+<p><strong>You’d think you can start a coding harness without any read-only loops first.</strong> You can. But every safeguard the coding harness needs — provenance trailers, heartbeat on absence, ops-channel routing, prompt-injection scanning, retired-claim greps — is dramatically cheaper to install once, on a low-stakes weekly digest, than to bolt onto a workflow that’s already opening PRs against production code. Every read-only loop above is a rehearsal for a safeguard that later becomes load-bearing.</p>
+</blockquote>
+<p><strong>Readiness gate for the Level 2 build:</strong> all sixteen loops are green on schedule; failure and staleness alerts land in ops (never leadership); the retired-claim + blocked-name grep gates block on every merge; provenance trailers are on every agent commit; the rhythm dashboard is deployed and updating weekly.</p>
+<hr />
+<h2 id="the-level-2-build-the-outbound-loop">The Level 2 build · The outbound loop</h2>
+<p>Level 2 goes fast. Not because the pattern was easy — because everything Level 1 installed made the safeguards, the grounding, and the enforcement almost free. What follows is the outbound sales pipeline. Adapt it to whichever generation task you’re using as your first non-read-only loop; the shape transfers.</p>
+<h3 id="l2-0-the-pipeline-as-a-git-commit-chain">L2-0 · The pipeline as a git commit chain</h3>
+<p><strong>Repo: sales-ops (new).</strong></p>
+<p>Twelve agents, each a folder under <code>agents/</code> with a single <code>CLAUDE.md</code> prompt. In pipeline order:</p>
+<p><code>crawler</code> → <code>event-ingest</code> → <code>dedup</code> → <code>pre-filter</code> → <code>enrichment</code> → <code>stack-profile</code> → <code>qualifier-critic</code> → <code>sequence-enrollment</code> → <code>copy-evaluator</code> → <code>review-queue</code> → <code>evergreen-nurture</code> → <code>feedback-loop</code></p>
+<p>The state machine is directories under <code>leads/</code>, one per stage, one JSON file per batch keyed by date:</p>
+<p><code>leads/raw/</code> → <code>leads/deduped/</code> → <code>leads/pre-filtered/</code> (with paired <code>-rejects.json</code>) → <code>leads/enriched/</code> → <code>leads/stack-profiles/</code> → <code>leads/critic/</code> → <code>leads/approved/</code> → <code>sends/queue/</code> → <code>sends/log/</code></p>
+<p>Every stage commits its output JSON back to <code>main</code>. <strong>The commit chain is the pipeline transport.</strong> <code>git log</code> is literally the audit trail — no orchestrator dashboard, no queue introspection UI, no second permission model. Re-runs are idempotent because each agent selects its input by “does this input file lack a same-date output file.”</p>
+<p>Race handling — multiple stages can push concurrently on the same day’s batch — is a rebase-and-retry loop on <code>git push</code>. Thirty lines of shell. That replaces a queue service at this scale. Instrument the retry counter; you’ll migrate to a real queue when it’s over three most days, and not before.</p>
+<p><strong>Suppression is a file.</strong> <code>suppression/list.jsonl</code> — one JSON per line, checked into git — is the send-time blocklist. Keyed on email, domain, or company name with reason codes: <code>bounced_hard</code>, <code>unsubscribed</code>, <code>complaint</code>, <code>competitor</code>, <code>internal</code>, <code>gdpr_request</code>, <code>prior_outreach</code>. It’s checked <em>twice</em>: a cheap domain match at dedup, and a full email/domain/company match after email lookup but before signal research. The second check exists because signal research burns paid API calls.</p>
+<p><strong>Cross-repo grounding is sparse checkout.</strong> Every judge and enrollment workflow sparse-checks-out the SSOT via <code>INTERNAL_DOCS_PAT</code> to pull the current rubrics (<code>03-commercial-revenue/rubrics/</code>) plus the grounding docs (ICP, buyer personas, positioning architecture, brand voice-tone, <code>claims-vetted.md</code>, <code>format-rules.md</code>). Judges never carry a hardcoded rubric; the rubric lives once, in the SSOT, and the pipeline reads the current version at run-time. This is what makes rubric edits a single-source change.</p>
+<p><strong>Attio schema setup</strong> (<code>attio-schema-setup.yml</code>) is idempotent. It runs on every workflow that could hit the CRM, but only creates missing fields. First-run bootstrap and steady-state parity are the same code path.</p>
+<blockquote>
+<p><strong>You’d think you need a queue service to run a multi-stage pipeline.</strong> You don’t. A folder per stage, a JSON per batch, and a rebase-and-retry loop on <code>git push</code> carries the pipeline for at least the first year. Migrate to a queue when the retry counter tells you to, not because a diagram suggested you would.</p>
+</blockquote>
+<p><strong>Readiness gate for L2-1:</strong> twelve agent folders exist; the state machine runs end-to-end on a manually-loaded batch (event CSV → raw → deduped → pre-filtered → enriched → stack-profile → critic → approved); the commit chain is clean; the suppression file is loaded from historical outbound data and both checks are wired.</p>
+<h3 id="l2-1-judges-rubrics-and-golden-sets">L2-1 · Judges, rubrics, and golden sets</h3>
+<p><strong>Repos: sales-ops (judges + evals) + internal-docs (rubrics).</strong></p>
+<p>Two blind evaluators, each a rubric in the SSOT — not in the pipeline repo:</p>
+<ul>
+<li><code>03-commercial-revenue/rubrics/qualifier-critic.md</code> — 23 criteria across five categories. PASS at ≥70, with zero Category-E fails.</li>
+<li><code>03-commercial-revenue/rubrics/copy-evaluator.md</code> — 24 criteria across five categories. PASS at ≥80, with zero Category-E hard-blocks. Category E includes hallucinated personalization; a hallucinated personal detail fails the draft outright.</li>
+</ul>
+<p>The judges are checkers, not makers. Their agent prompts (<code>agents/qualifier-critic/CLAUDE.md</code>, <code>agents/copy-evaluator/CLAUDE.md</code>) say so explicitly at the top. Each emits a schema-validated verdict JSON with per-criterion scores and rationales. A PASS verdict moves the lead forward to <code>leads/approved/</code> or <code>sends/queue/</code>; a FAIL verdict routes the lead to <code>leads/critic/</code> or <code>review-queue/</code>. Failed verdicts do not silently retry.</p>
+<p><strong>Golden sets</strong> live under <code>evals/</code> in the sales-ops repo:</p>
+<ul>
+<li><code>evals/qualifier-critic/golden-leads.json</code> — ~150 lines of hand-labeled leads with <code>expected.json</code> verdicts</li>
+<li><code>evals/copy-evaluator/golden-leads.json</code> + <code>evals/copy-evaluator/golden-drafts/</code> — four hand-labeled touch-1 drafts covering one pass and three distinct fail modes: banned-opener, hallucinated personalization, unvetted-claims</li>
+</ul>
+<p>The harness (<code>evals/run_eval.py</code>, ~150 lines) does two non-obvious things:</p>
+<ol type="1">
+<li><strong>Sandbox the SSOT.</strong> Its <code>setup</code> command copies <code>internal-docs</code> into a temp directory so the eval runs deterministically against a snapshot, not the live tree. A rubric edit landing mid-eval can’t corrupt the run.</li>
+<li><strong>Materialize date placeholders.</strong> <code>{{TODAY}}</code> and <code>{{DAYS_AGO_N}}</code> in fixtures get expanded to real dates at run time, so freshness-sensitive criteria — “hiring signal within the last 30 days” — never rot the fixture. Fixtures without this pattern silently become wrong when they age.</li>
+</ol>
+<p><code>judge-evals.yml</code> runs Mon 11:00 UTC on a schedule <em>and</em> on any PR touching <code>agents/qualifier-critic/</code>, <code>agents/copy-evaluator/</code>, or <code>evals/</code>. <strong>A verdict flip on the golden set fails the workflow and freezes rubric merges until the eval is green again.</strong> Because the rubric edits live in a different repo (SSOT) from the judge (sales-ops), the merge gate has to be triggered from both sides — the SSOT PR check calls back into sales-ops eval, and the sales-ops eval fails loud if the pulled rubric produces a verdict change.</p>
+<p><strong>Monthly feedback-loop</strong> (<code>feedback-loop.yml</code>, 1st of month, 13:00 UTC) mines the human edits made to drafts before approval, clusters them into patterns, and — if it can cite three or more independent examples — files an evidence-backed rubric-proposal PR against the SSOT. The rubric improves from observed corrections; nobody has to notice the drift themselves. Humans approve the criteria change; they no longer have to be the ones who detect that the criteria need changing.</p>
+<blockquote>
+<p><strong>You’d think rubric maintenance is a standing meeting.</strong> It’s a scheduled loop. The feedback loop mines what humans corrected before approval and files evidence-backed proposals for review. Humans approve changes to the criteria; they no longer have to detect that the criteria are drifting.</p>
+</blockquote>
+<p><strong>Readiness gate for L2-2:</strong> both judges are wired as pipeline gates; both golden sets exist with <code>expected.json</code>; <code>judge-evals.yml</code> is green on schedule and a required check on rubric-path PRs in both repos; at least one monthly feedback-loop run has produced an evidence-backed rubric-proposal PR (approved or rejected — both count as success).</p>
+<h3 id="l2-2-send-side-deliverability-and-the-kill-switch">L2-2 · Send-side, deliverability, and the kill switch</h3>
+<p><strong>Repo: sales-ops (workflows + Cloudflare Workers).</strong></p>
+<p>The send-side is where the safeguards get load-bearing. Every safeguard here is code, not prompt — because anything that must never happen shouldn’t depend on a model’s mood.</p>
+<p><code>smtp-send.yml</code> runs hourly M–F 13-23 UTC. Every run checks, in order:</p>
+<ol type="1">
+<li><strong><code>SEQUENCES_PAUSED</code></strong> — a repo Actions variable. Global kill switch. If true, the workflow exits silently with a heartbeat note. Nothing sends.</li>
+<li><strong>The suppression file</strong> for every candidate send.</li>
+<li><strong><code>sends/daily-count.json</code></strong> — a hard cap (100/day is the initial setting). The counter increments after each successful send.</li>
+<li><strong>The EU router</strong> (<code>lib/eu_router.py</code>) — EU/EEA/UK contacts never SMTP-sent. Instead flagged for LinkedIn-only routing plus a Slack action item.</li>
+</ol>
+<p>Sends go through Resend with <code>ATTIO_BCC_ADDRESS</code> on every outgoing message, so every send lands on the CRM contact timeline. The BCC is the audit trail — reviewers can reconstruct the full conversation from the CRM without touching sales-ops at all.</p>
+<p><strong>Reply intake</strong> (<code>reply-monitor.yml</code>, hourly M–F 13-23 UTC) does exactly two things: pauses the sequence for the replying account, and DMs a reviewer on Slack. Reply detection is the highest-blast-radius safeguard in the loop — a stale reply-monitor means Hard Rule 5 (pause on reply) is unenforceable, which is why the heartbeat below elevates stale-reply-monitor to a critical alert.</p>
+<p><strong>Deliverability monitor</strong> (<code>deliverability-monitor.yml</code>, daily 12:00 UTC) reads bounce and complaint rates from Resend. On a spike, it <strong>sets <code>SEQUENCES_PAUSED=true</code> autonomously.</strong> An automated agent can globally pause outbound based on delivery health without a human in the loop. The reasoning: sender-reputation decay has a fast curve — every extra minute of sending after a bounce spike makes the recovery cost higher. Waiting for a human is more expensive than pausing incorrectly.</p>
+<p><strong>Pipeline heartbeat</strong> (<code>pipeline-heartbeat.yml</code>) runs Tue–Sat 12:30 UTC plus Mon–Fri 17:00 UTC. It doesn’t check that workflows succeeded — it checks that they <em>ran and produced output</em>. Absence of output is the alert. Cross-workflow invariants it evaluates:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Invariant</th>
+<th>Alert level</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enrichment ran today given a crawl ran today</td>
+<td>Warning</td>
+</tr>
+<tr>
+<td>Every scheduled workflow’s latest run is not <code>failure</code></td>
+<td>Warning</td>
+</tr>
+<tr>
+<td>Sends succeeded in the last 24h <em>and</em> reply-monitor is stale</td>
+<td><strong>Critical — page ops</strong></td>
+</tr>
+<tr>
+<td>Crawl produced zero raw leads today</td>
+<td>Warning</td>
+</tr>
+<tr>
+<td>Deliverability monitor hasn’t run in 48h</td>
+<td>Warning</td>
+</tr>
+</tbody>
+</table>
+<p><code>HEARTBEAT_SKIP</code> is a repo variable that silences a specific monitored workflow (like reply-monitor before DNS is live for a new sending domain) without deleting the invariant. Cheaper than commenting out checks and forgetting to restore them.</p>
+<p><strong>Cloudflare Workers</strong> carry the ambient services: <code>inbox-agent/</code> handles inbound routing and <code>slack-webhook/</code> handles Slack interactivity. Deployed via <code>cloudflare-worker-deploy.yml</code> + <code>inbox-agent-deploy.yml</code> on push to the relevant paths, using <code>wrangler</code>.</p>
+<p><strong>Headless execution contract — the last piece.</strong> Every headless agent’s <code>CLAUDE.md</code> carries an “Execution contract (READ FIRST)” preamble that forbids “want me to…”, “should I…”, “let me know if…”. Those messages get eaten by the workflow log, the next stage never runs, and the batch is silently stuck. Even with the preamble, <code>sequence-enrollment.yml</code> prepends <code>PROMPT=$'START NOW. …'</code> before the model’s actual instructions — the pattern was added after the model kept offering to check status first before drafting.</p>
+<blockquote>
+<p><strong>You’d think the kill switch is a red button someone pushes.</strong> It’s also a repo variable that a scheduled workflow flips autonomously on delivery-health spikes. The manual switch is the backup, not the primary. The primary is code, because sender-reputation decay moves faster than a human on-call rotation.</p>
+</blockquote>
+<blockquote>
+<p><strong>You’d think the heartbeat’s job is to notice failed workflows.</strong> Its job is to notice absent workflows. A workflow that errored loudly is annoying; one that silently didn’t run is dangerous. Absence of output is the alarm.</p>
+</blockquote>
+<p><strong>Readiness gate to build the coding harness:</strong> the loop is running steadily with (a) at least one automatic pause-and-recover triggered by <code>deliverability-monitor.yml</code>, (b) at least one heartbeat-caught staleness incident routed to ops, and (c) zero incidents involving a hallucinated personalization slipping past the copy-evaluator — or, if one did slip past, a fixture was added to the golden set from that incident and <code>judge-evals.yml</code> re-caught it.</p>
+<hr />
+<h2 id="the-signal-to-build-the-harness">The signal to build the harness</h2>
+<p>Two loops had been running steadily. Judges were regression-tested. Golden sets were catching drift on rubric edits. Ops-channel heartbeats had shaken out the silent-failure modes. The kill switch had fired at least once autonomously and recovered. The pain that made this paper’s phases feel obvious was small and specific: we were manually ferrying tickets into a coding session’s context, and manually ferrying the diff and reviews back out. That’s the exact pain <em>Context, Loops, Graphs</em> names as the Level 3 signal. It isn’t ambition. It’s a wrist-cramp.</p>
+<blockquote>
+<p><strong>You’d think you can start the coding harness before the loops are running.</strong> You can. It just costs more later. Every safeguard above — provenance trailers, heartbeat on absence, ops-channel routing, prompt-injection scanning, retired-claim greps, an autonomous kill switch, judge regression tests, sparse-checkout grounding — is dramatically cheaper to install on a low-stakes read-only loop or an outbound draft than to bolt onto a workflow that’s already opening PRs against production code. The habit is the load-bearing artifact, not the diagram.</p>
+</blockquote>
+<hr />
+<h2 id="the-repo-split-for-level-3">The repo split for Level 3</h2>
+<p>By the time you start Level 3, you already have two repos from the levels below — the SSOT and the loop. Level 3 adds a third dedicated repo and touches a fourth. Fighting this split is the most common early mistake.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Repo</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>internal-docs</strong> (from L1)</td>
+<td>Your SSOT. Graph nodes live as frontmatter. Skills, rules, team memory, terminus docs. The dream loop writes here — nowhere else.</td>
+</tr>
+<tr>
+<td><strong>sales-ops / loop-ops</strong> (from L2)</td>
+<td>Your first production loop. Judges pull rubrics from <code>internal-docs</code> via sparse checkout; state lives here.</td>
+</tr>
+<tr>
+<td><strong>agent-ops</strong> (new, L3-0)</td>
+<td>New private repo. Workflows, agents, schemas, <code>state/</code>, evals, condensed session transcripts. Never touches production code directly.</td>
+</tr>
+<tr>
+<td><strong>product-repo(s)</strong></td>
+<td>Your existing code. Agents open PRs against these. Guards are installed as required checks on <code>agent/*</code> branches.</td>
+</tr>
+</tbody>
+</table>
+<p>The reason for the split is not neatness. It’s blast radius. The pipeline’s runtime commits (queue claims, transcripts, ledger updates) must not pollute your knowledge base’s history; your knowledge base’s edits must not require production repo access; your production repos’ merges must never require agent-ops credentials to review; and the loop repos must not carry write tokens for the SSOT.</p>
+<hr />
+<h2 id="five-concepts-to-align-on-before-you-write-any-code">Five concepts to align on before you write any code</h2>
+<p>These recur throughout the Level 3 phases below. If your team hasn’t agreed on them, agree now.</p>
+<h3 id="terminus-documents">Terminus documents</h3>
+<p>The small set of load-bearing, high-fan-in artifacts everything else depends on. Operational guardrails (cost ceiling, WIP caps, merge gates), the spec template, system invariants, expertise paths, the mode taxonomy. These are the engineering equivalent of the sales rubrics in CLG: senior judgment, compiled. They live in <code>terminus/</code> in internal-docs and change only through deliberate architectural PRs.</p>
+<h3 id="mode-taxonomy">Mode taxonomy</h3>
+<p>Every ticket is labeled <code>mode:claude-led</code>, <code>mode:mixed</code>, or <code>mode:requires-expertise</code>. The intake workflow enforces this — it is not advisory. <code>claude-led</code> runs the full pipeline. <code>mixed</code> is refused. <code>requires-expertise</code> is pinned at L0 forever, and the expertise-path guard blocks agent PRs against those code areas regardless of the ladder.</p>
+<p>Write down what <em>kinds</em> of tickets belong in each mode for your product. This doc is the highest-leverage thing to get right before L3-2 ships.</p>
+<h3 id="skills">Skills</h3>
+<p>Markdown files under <code>.claude/agents/</code> describing a repeatable task. Each one names itself, describes when to invoke it, and lists the steps. QA skills are the most important — the implementer’s self-verification runs them all in parallel as an Actions matrix before opening a PR. A failed QA skill abandons the run and alerts ops; the PR never opens.</p>
+<p>Build at minimum: one QA skill per language in your stack, a <code>pr-review</code> skill, a <code>senior-reviewer</code> skill (Opus), and a <code>spec-drafter</code> skill. That’s the floor for L3-2.</p>
+<h3 id="the-hash-check-state-pattern">The hash-check state pattern</h3>
+<p>Every state write goes through a composite action — never directly from an agent job. Read the file, record its blob SHA, compute the update, attempt to commit; if the SHA moved, rebase and retry up to three times, then fail loudly. This is your concurrency control. It is also the entire reason git can substitute for a queue service at this scale.</p>
+<h3 id="session-transcripts-condensed">Session transcripts, condensed</h3>
+<p>Every implementer run produces a transcript. Raw transcripts are large and may contain secrets — they are never written to disk raw. A condensing step runs as the final job of the implement stage: it strips tool call bodies, keeps model text output, redacts anything matching your secret patterns, and stores the result under <code>sessions/YYYY-WW/&lt;issue&gt;-&lt;slug&gt;.json</code>.</p>
+<p>The dream loop’s miners read these condensed summaries. They must not see raw content, ever.</p>
+<hr />
+<h2 id="l3-0-plumbing-and-safety-floor">L3-0 · Plumbing and safety floor</h2>
+<p><strong>Repo: agent-ops + org settings.</strong></p>
+<p>Repo skeleton: <code>agents/</code>, <code>evals/</code>, <code>state/</code>, <code>sessions/</code>, <code>schemas/</code>, <code>.github/workflows/</code>. An attribution-strip composite action that re-authors commits to the bot and strips Claude trailers, plus a <code>footprint-scan</code> check for public-facing repos. A <code>pipeline-heartbeat.yml</code> that alerts on staleness, zero-output runs, and failed-latest runs — into the <em>ops</em> channel, never leadership.</p>
+<p>Wire the cost ceiling now, before anything else runs. A weekly spend digest via <code>gh api</code>; alert at 70% of budget; hard-stop non-exempt workflows at 100%. Document the ceiling in <code>terminus/operational-guardrails.md</code>. Do not skip this step. A runaway agent that discovers your API key has no ceiling is the single most expensive failure mode in the whole system.</p>
+<p>Wire the input scanner. It’s a PostToolUse hook that runs on every tool call that reads external content — issue bodies, PR comments, commit messages, scraped pages. It checks for prompt-injection patterns, secret patterns, and any name on <code>schemas/blocked-names.json</code>. On match: halt the tool call, alert ops, comment on the source flagging the pattern. External contributors are your highest-exposure surface; the scanner is your defense, not the model’s judgment.</p>
+<p>Provision the PAT matrix. One token per capability, each scoped narrowly:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Token</th>
+<th>Scopes</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>INTERNAL_DOCS_READ</code></td>
+<td><code>contents:read</code> on internal-docs</td>
+<td>Every task agent</td>
+</tr>
+<tr>
+<td><code>DREAM_WRITE</code></td>
+<td><code>contents:write</code> + <code>pull-requests:write</code> on internal-docs</td>
+<td>Dream loop only</td>
+</tr>
+<tr>
+<td><code>PRODUCT_READ</code></td>
+<td><code>contents:read</code> on product-repo(s)</td>
+<td>Implementer</td>
+</tr>
+<tr>
+<td><code>PRODUCT_WRITE</code></td>
+<td><code>contents:write</code> + <code>pull-requests:write</code> on product-repo(s)</td>
+<td>Implementer</td>
+</tr>
+<tr>
+<td><code>SPRINT_WRITE</code></td>
+<td><code>issues:write</code> on sprint repo</td>
+<td>Ticket-drafter</td>
+</tr>
+<tr>
+<td><code>ACTIONS_READ</code></td>
+<td><code>actions:read</code> on agent-ops</td>
+<td>Cost digest, heartbeat</td>
+</tr>
+</tbody>
+</table>
+<p>Never give a task agent a write token scoped beyond one PR. The dream loop’s token is the <em>only</em> one that touches internal-docs; it never leaves the dream workflow.</p>
+<blockquote>
+<p><strong>You’d think a small team can share a single powerful token.</strong> That’s how a compromised implementer session ends up rewriting your positioning docs. Narrow PATs are the cheapest boundary you’ll ever install.</p>
+</blockquote>
+<p><strong>Readiness gate:</strong> the bot opens a footprint-clean PR to a public-facing repo from CI; the cost digest and heartbeat both post to Slack.</p>
+<hr />
+<h2 id="l3-1-knowledge-graph-bootstrap">L3-1 · Knowledge graph bootstrap</h2>
+<p><strong>Repo: internal-docs. Mostly review work.</strong></p>
+<p>Extend your frontmatter schema. Every doc that participates in the graph declares:</p>
+<ul>
+<li><code>graph_id</code> — stable unique identifier</li>
+<li><code>graph_type</code> — one of <code>architectural-decision | positioning-claim | component | customer-requirement | open-question</code></li>
+<li><code>depends_on</code>, <code>satisfies</code>, <code>supersedes</code> — edges to other <code>graph_id</code>s</li>
+<li><code>last_changed_pr</code> — the PR number of the last substantive change</li>
+<li><code>last_verified</code> — ISO date of last human or agent verification</li>
+<li><code>confidence</code> — one of <code>verified | observed | assumed</code></li>
+</ul>
+<p>Node homes map to folders you already have: ADRs to your ADR folder, components to per-repo doc folders, positioning claims to your messaging house, customer requirements to your account folders, open questions to your engineering signals folder.</p>
+<p>Four mining agents run in parallel, each producing a batched PR of about ten nodes at a time:</p>
+<ul>
+<li><strong>ADR miner</strong> infers <code>depends_on</code> and <code>supersedes</code> from cross-references and rejected-alternatives sections; backfills <code>last_changed_pr</code> via <code>git log --follow</code>.</li>
+<li><strong>Invariants miner</strong> seeds the high-fan-in nodes from <code>terminus/invariants.md</code>.</li>
+<li><strong>Postmortem miner</strong> writes confidence downgrades on components implicated in incidents.</li>
+<li><strong>Positioning miner</strong> walks docs that reference meeting notes and extracts positioning-claim and customer-requirement nodes.</li>
+</ul>
+<p><code>scripts/build-graph.py</code> compiles <code>graph.json</code> with a reverse index (<code>dependents_of</code>). <code>graph-build.yml</code> runs on push to main: regenerate, validate (dangling refs, cycles, superseded-but-still-depended-on all fail), commit.</p>
+<p>Wire staleness propagation. When a node changes, walk the reverse index, flag every direct dependent’s confidence for re-verification, and upsert a pinned Staleness Digest issue. Task agents read this digest before starting any work. Only the dream loop and humans can resolve entries.</p>
+<blockquote>
+<p><strong>You’d think mining agents produce ten thousand-line PRs.</strong> They produce batched PRs of about ten nodes each. Small enough to review in fifteen minutes; large enough to actually make progress. The batch size is the whole trick.</p>
+</blockquote>
+<p><strong>Readiness gate:</strong> <code>graph.json</code> regenerates on every merge; ≥90% of ADRs, all invariants docs, and all postmortems are nodes; validation is a required check; the staleness digest is live and non-empty.</p>
+<hr />
+<h2 id="l3-2-coding-loop-v1-humans-review-everything">L3-2 · Coding loop v1, humans review everything</h2>
+<p><strong>Repos: agent-ops (workflows), internal-docs (specs + skills), product-repo(s) (PRs + guards).</strong></p>
+<p>Before this phase ships, the core skill set must exist in internal-docs: one QA skill per language in your stack, <code>pr-review</code>, <code>senior-reviewer</code>, <code>spec-drafter</code>. If any is missing, stop.</p>
+<p>The pipeline is six workflow jobs.</p>
+<p><strong>Intake</strong> runs on a two-hour cron plus manual dispatch. It scans your sprint board for issues carrying <code>mode:claude-led</code> and <code>agent:queued</code> with no open agent branch, refuses <code>mode:mixed</code> and <code>mode:requires-expertise</code>, claims the ticket in <code>state/queue.json</code> via the hash-check composite action, comments on the issue. WIP cap: two concurrent tickets.</p>
+<p><strong>Spec</strong> runs the <code>spec-drafter</code> skill, pre-loading the relevant graph nodes for the affected area. Output is a PR to your specs folder in internal-docs. A human approves before anything gets coded. There’s a fast path — bug fixes restoring documented behavior, contract-preserving refactors, docs-only changes — that skips this step with a one-paragraph intent note attached to the ticket instead.</p>
+<p>The spec template is seven required sections: <strong>Problem</strong>, <strong>Constraints</strong>, <strong>Relevant decisions</strong>, <strong>Success criteria</strong>, <strong>Out of scope</strong>, <strong>Implementation notes</strong>, <strong>Verification plan</strong>. Every field is scoreable — no vague language survives the judge in L3-3, and the earlier you enforce that, the less rework later.</p>
+<p><strong>Implement</strong> checks out <code>agent/&lt;issue&gt;-&lt;slug&gt;</code> (the branch is the checkpoint; re-runs resume from it automatically). It loads the approved spec, the graph nodes for touched components, invariants, and shared team memory. It runs all applicable QA skills in parallel — one Actions job per language or layer. It produces a condensed session transcript. On timeout, max-turns, or QA failure, it abandons, comments on the issue, and alerts ops. The PR does not open.</p>
+<p><strong>Self-review</strong> runs <em>fresh context</em>. Two separate <code>claude -p</code> invocations — separate jobs, separate logs. The first is <code>pr-review</code>. The second is <code>senior-reviewer</code> (Opus), fed only the diff, the spec, and the relevant graph nodes. The implementer must address or explicitly rebut both reviews’ findings before the PR opens; both transcripts are attached verbatim to the PR body.</p>
+<blockquote>
+<p><strong>You’d think the implementer can review its own output if the prompt is careful.</strong> It rubber-stamps itself. Every review is a separate process with no access to the implementer’s transcript. This is not a preference — it’s the reason the reviews catch anything at all.</p>
+</blockquote>
+<p><strong>PR opens.</strong> The bot creates the PR; attribution is stripped on public repos. Body includes the spec link, both review transcripts, the graph nodes consulted, and the QA skill results. A Slack notification lands in ops.</p>
+<p><strong>Guards</strong> are required CI checks on <code>agent/*</code> branches in product repos. The <code>expertise-path-guard</code> reads <code>terminus/expertise-paths.md</code> and fails any agent PR touching your highest-risk paths — for a SaaS product, think auth and session handling, billing and entitlements, data-layer internals, anything security-sensitive. This is deterministic. Never self-policed. The <code>footprint-scan</code> check confirms no Claude attribution markers landed in commit messages, PR bodies, or code comments.</p>
+<p><strong>Readiness gate:</strong> five tickets flow end-to-end. Median time-to-PR under 24 hours from label. Zero expertise-path violations.</p>
+<hr />
+<h2 id="l3-3-quality-gates-and-judges">L3-3 · Quality gates and judges</h2>
+<p><strong>Repos: agent-ops (judge + evals), internal-docs (rubric), product-repo(s) (required checks).</strong></p>
+<p>Add a <code>code-judge</code> — an Opus process that scores each agent PR against the spec’s seven sections, your stability policy, and a senior-reviewer rubric mined from your team’s actual review history. It’s a required check. Must pass ≥80% to merge.</p>
+<p>The rubric skeleton — adapt to your codebase — scores each category 0/1/2. Default threshold: ≥12/16 to pass.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Category</th>
+<th>What to assess</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Correctness</td>
+<td>Does the implementation match every success criterion in the spec?</td>
+</tr>
+<tr>
+<td>Invariant compliance</td>
+<td>Are all invariants in <code>terminus/invariants.md</code> preserved?</td>
+</tr>
+<tr>
+<td>Scope discipline</td>
+<td>Does the PR do exactly what the spec says — no more, no fewer?</td>
+</tr>
+<tr>
+<td>Test coverage</td>
+<td>Are new behaviors tested? Failure modes and edge cases?</td>
+</tr>
+<tr>
+<td>Error handling</td>
+<td>Failure modes handled explicitly, not swallowed?</td>
+</tr>
+<tr>
+<td>Readability</td>
+<td>Would a new team member understand this code in six months?</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Any obvious algorithmic issues or N+1 patterns introduced?</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>Input validation gaps, privilege escalation, insecure defaults?</td>
+</tr>
+</tbody>
+</table>
+<p>Seed the initial rubric weights from your historical PR review comments. Look at the last twenty to thirty merged PRs, list the most common change-request categories, and weight the rubric accordingly. Those patterns <em>are</em> your senior judgment. Compile them.</p>
+<p>Build the golden set. Twenty to thirty historical PRs with known human verdicts (approved as-is vs. required changes), pulled via <code>gh api</code>, stored in <code>evals/fixtures/</code>. Store the fixtures as JSON with the diff, the spec (or a reconstruction), and the verdict. This is the ground truth the judge is measured against.</p>
+<p><code>judge-evals.yml</code> runs matrix over <code>code-judge</code> and <code>senior-reviewer</code>. Triggers: any change to the rubric or fixtures, weekly cron for model drift, manual dispatch. <strong>A verdict flip on the golden set triggers a global auto-merge freeze until eval is green again.</strong></p>
+<p>Layer on the mechanical checks CI doesn’t already cover: coverage delta ≤ 2pp per file, invariant/contract suite inclusion on guarded paths.</p>
+<p>Stub the <code>release-kickoff</code> skill — LLM-driven integration tests as a release gate, cheap path-filtered surfaces per PR (checking error message actionability when error strings change, checking docs voice on docs-only changes). Fully wire in L3-4.</p>
+<p><strong>Readiness gate:</strong> the judge is required on all agent PRs. Weekly eval is green. Judge/human verdict agreement ≥85% over ≥15 PRs.</p>
+<hr />
+<h2 id="l3-4-release-intelligence">L3-4 · Release intelligence</h2>
+<p><strong>Repos: agent-ops (workflow + agent), internal-docs (rubric), sprint repo (proposed-ticket label).</strong></p>
+<p>The coding harness produces PRs. Without an outer loop, nothing tells you which of those PRs the market cares about — the highest-value work in your backlog stays invisible until a customer asks for it, and by then you’re behind. L3-4 closes that loop. Releases score themselves; the market-worthy ones arrive as proposed tickets for a human to promote or dismiss.</p>
+<p>This is the phase most teams treat as a nice-to-have and then discover, six months in, is doing half the work. Build it now.</p>
+<p><strong>Prerequisites, all first-class graph nodes in internal-docs:</strong></p>
+<ul>
+<li>An ICP definition doc that’s current and treated as authoritative.</li>
+<li>A positioning/messaging house doc.</li>
+<li>A competitive intelligence system producing periodic digests accessible from Actions.</li>
+</ul>
+<p>If any of the three is missing or stale, fix it before shipping this phase. The scoring rubric is only as good as the docs it anchors to.</p>
+<p><strong>The rubric.</strong> Same pattern as the code judge: numeric thresholds, editable in the docs repo, regression-tested on change. Five dimensions, each scored 0–2. Sum ≥6/10 is market-worthy; ≥8/10 is a high-priority template or docs candidate.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>0</th>
+<th>1</th>
+<th>2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ICP problem match</td>
+<td>No connection to a named ICP problem</td>
+<td>Adjacent to an ICP problem</td>
+<td>Directly addresses a problem named in the ICP doc</td>
+</tr>
+<tr>
+<td>Messaging house alignment</td>
+<td>Contradicts or is silent</td>
+<td>Supports an existing claim</td>
+<td>Closes a documented gap or materially strengthens a claim</td>
+</tr>
+<tr>
+<td>Market signal resonance</td>
+<td>Not in your intel digest</td>
+<td>Mentioned as emerging</td>
+<td>Active problem for the ICP cohort in the latest digest</td>
+</tr>
+<tr>
+<td>Differentiation delta</td>
+<td>Parity with alternatives</td>
+<td>Incremental advantage</td>
+<td>Meaningfully harder to replace vs. the nearest named alternative</td>
+</tr>
+<tr>
+<td>Template/docs impact</td>
+<td>No prospect-facing value</td>
+<td>Useful but not demonstrable</td>
+<td>A prospect would understand the product materially better from a template showing this</td>
+</tr>
+</tbody>
+</table>
+<p>Score against your <em>target</em> ICP, not your current customer list. An early-stage customer base often reflects founder relationships more than market fit; the customers who look nothing like your ICP are a signal to understand, not to optimize for. The written ICP is the reference. The anecdote isn’t.</p>
+<p><strong>The workflow.</strong> <code>release-intelligence.yml</code> triggers on <code>release: types: [published]</code>. Its jobs, each a separate stage:</p>
+<ol type="1">
+<li><strong>Fetch</strong> merged PRs since the last release tag via <code>gh api</code>.</li>
+<li><strong>Load context:</strong> ICP doc, positioning-claim graph nodes from <code>graph.json</code>, latest competitive intelligence digest.</li>
+<li><strong>Score.</strong> <code>release-intelligence-miner</code> reads the PR list + context and outputs a schema-validated <code>release-findings.json</code> — one entry per PR with the five dimension scores, total, verdict, and evidence links.</li>
+<li><strong>Validate</strong> against <code>schemas/release-findings-schema.json</code>; fail the workflow on schema error.</li>
+<li><strong>Write state</strong> to <code>state/releases/&lt;tag&gt;/findings.json</code> through the hash-check action; idempotent on rerun.</li>
+<li><strong>Draft tickets.</strong> For every finding scored market-worthy, the <code>ticket-drafter</code> agent opens one issue in your sprint repo. Body format is strict: <strong>Problem</strong>, <strong>What to create</strong>, <strong>Acceptance criteria</strong>, plus release tag, PR number, score, and evidence. Labels: <code>agent:proposed</code> and <code>release-intelligence</code>. Assigned to the sprint board but <em>not to a sprint iteration</em>.</li>
+</ol>
+<p>The prospect-name guard validates every drafted body against <code>schemas/blocked-names.json</code> before the issue opens. Confidential target names never appear in tracker bodies that external contributors might see.</p>
+<p><strong>Human promotion is a hard gate.</strong> A PM reviews the proposed issues, applies <code>agent:queued</code> + <code>mode:claude-led</code>, and removes <code>agent:proposed</code>. The ticket enters the L3-2 pipeline on the next intake cron — no other action needed. The ticket body format is designed to be L3-2-compatible on day one, so the delivery layer requires no new plumbing.</p>
+<p><strong>Heartbeat guard.</strong> If a new tag exists with no corresponding <code>state/releases/&lt;tag&gt;/</code> entry after 24 hours, alert ops. Prevents silent failure when someone pushes a tag without publishing a GitHub release.</p>
+<blockquote>
+<p><strong>You’d think a PM reads every release to find the marketable bits.</strong> The release scores itself. Each shipped change is evaluated against your ICP and messaging house, and the market-worthy ones arrive as proposed tickets with the scoring attached — for a human to promote or dismiss.</p>
+</blockquote>
+<blockquote>
+<p><strong>You’d think this only works once you have real customers.</strong> It works better before you do. When your customer base is small and unrepresentative, anchoring to the written ICP is the only way to keep the backlog pointed at the market you’re building for instead of the accidents of who bought early.</p>
+</blockquote>
+<p><strong>Readiness gate:</strong> a test release triggers the workflow; <code>release-findings.json</code> validates against schema; at least one finding carries evidence links; a proposed issue opens with correct labels, body format, and sprint-board assignment; the Slack notification lands in ops; the issue does <em>not</em> enter the coding pipeline until a human applies <code>agent:queued</code>.</p>
+<hr />
+<h2 id="l3-5-the-dreaming-loop">L3-5 · The dreaming loop</h2>
+<p><strong>Repos: agent-ops (<code>dream.yml</code>), internal-docs (output PRs). Carries an ongoing human-review commitment on every run.</strong></p>
+<p>The dream loop is the memory-refresh engine. It runs weekly on a Sunday cron plus manual dispatch. It has its own budget line and is <em>not</em> cost-exempt — it’s the first workflow to shed at the ceiling.</p>
+<p>It reads: merged PR diffs and review comments across your org (human post-merge edits to agent PRs are the richest implicit correction signal), condensed session transcripts, postmortems, meeting notes if your notes tool syncs to internal-docs, the staleness digest, and judge-versus-human verdict disagreements.</p>
+<p>One orchestrator spawns three parallel Task-tool subagents:</p>
+<ul>
+<li><strong>Transcript-failure miner</strong> reads condensed sessions; finds dead-ends, wrong assumptions, and missing context that caused sessions to fail.</li>
+<li><strong>Review-delta miner</strong> reads post-merge diffs between the agent’s PR and the final merged state; what a human changed after the agent finished is the strongest signal you have.</li>
+<li><strong>Doc-drift miner</strong> reads the staleness digest and graph nodes; downgrades confidence on nodes contradicted by merged code.</li>
+</ul>
+<p>All findings are schema-validated JSON. The orchestrator synthesizes with a <strong>3x evidence bar</strong> — a proposed change to shared memory requires ≥3 independent evidence links before it ships in the PR.</p>
+<p>Output is one PR per run to internal-docs, touching: <code>team-memory/</code> (shared context all agents load; corrections to wrong assumptions go here), graph frontmatter (confidence bumps, <code>last_verified</code> updates, new <code>supersedes</code> edges), and <code>rules/</code> (guardrails that have proved necessary). From L3-6 onward it can also propose edits to skills and prompts.</p>
+<p>Every proposal in the PR body carries ≥3 evidence links, a prevalence count across sessions, and a one-line “risk if this memory is wrong.”</p>
+<p>Judge disagreements go into a second small PR to <code>evals/</code> — proposed golden-set fixture additions.</p>
+<p><strong>Human approval is required indefinitely.</strong> This gate is the memory-poisoning firewall. No dream PR merges without a human reviewing it. Not at L3. Not at L4. Not ever.</p>
+<blockquote>
+<p><strong>You’d think you have to sit down and update the wiki after every incident.</strong> The dream loop mines the incident, the transcripts, and the post-merge edits, and files the update with evidence attached. You approve or reject. You never author from scratch.</p>
+</blockquote>
+<p><strong>Readiness gate:</strong> three consecutive weekly runs with reviewable PRs; ≥60% of proposals merged; ≥1 <code>supersedes</code> edge and ≥1 team-memory entry originated from a dream run.</p>
+<hr />
+<h2 id="l3-6-earned-autonomy">L3-6 · Earned autonomy</h2>
+<p><strong>Repo: agent-ops.</strong></p>
+<p>The autonomy ledger — <code>state/autonomy-ledger.json</code> — tracks per-work-class level and rolling metrics, updated by CI on PR close or merge, hash-checked like every other state file.</p>
+<p>The ladder:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>What changes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L0</td>
+<td>Human-authored only</td>
+</tr>
+<tr>
+<td>L1</td>
+<td>Agent opens PR; human reviews spec + code</td>
+</tr>
+<tr>
+<td>L2</td>
+<td>Spec fast-path auto-approved; human reviews code</td>
+</tr>
+<tr>
+<td>L3</td>
+<td>Auto-merge on all-green + 24h revert window + Slack notify</td>
+</tr>
+<tr>
+<td>L4</td>
+<td>Auto-merge + auto-selected tickets from sprint column</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Promotion criteria — all must hold, per class:</strong></p>
+<ul>
+<li>≥10 consecutive merged PRs with zero change-requests and zero post-merge human edits</li>
+<li>Judge first-pass ≥90%</li>
+<li>Zero postmortems attributing an escaped bug to the class in the trailing 30 days</li>
+<li>Coverage rule never tripped</li>
+<li>Zero guardrail overrides</li>
+</ul>
+<p><strong>Demotion, automatic:</strong></p>
+<ul>
+<li>Postmortem with <code>caused_by_class</code> in frontmatter → −1 level plus auto-merge freeze for that class</li>
+<li>Two consecutive change-requested PRs → −1 level</li>
+<li>Judge verdict flip on the golden set → global freeze until eval green</li>
+</ul>
+<p>The dream loop earns a self-improvement channel here: it may propose skill, prompt, or rubric edits. Any such PR must include the golden-set eval run on the changed content in its body before it can merge, and merging triggers <code>judge-evals</code> automatically.</p>
+<p>First L3 candidates are the lowest-blast-radius classes in your backlog — codegen from OpenAPI specs, SDK regeneration, docs scaffolding, test scaffolding. Not your core engine.</p>
+<blockquote>
+<p><strong>You’d think a work-class earns autonomy and keeps it.</strong> It doesn’t. Every merged PR either raises or lowers the class’s standing. A regression demotes the class, not the harness. Autonomy is a rolling privilege.</p>
+</blockquote>
+<p><strong>Readiness gate:</strong> ≥1 class sustained at L3 with no demotion across a stable run. The weekly digest reports tickets per digest cycle, human-edit distance, judge agreement, dream acceptance rate, token spend per merged PR, staleness backlog.</p>
+<hr />
+<h2 id="what-breaks-and-why">What breaks and why</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Memory poisoning or prompt injection</td>
+<td>Every memory write is a human-reviewed PR. Input scanner on all external content. Evidence links make poisoned claims falsifiable at review.</td>
+</tr>
+<tr>
+<td>Judge drift</td>
+<td>Weekly and on-change golden-set evals; verdict flip triggers global freeze; rubric changes require an attached eval run.</td>
+</tr>
+<tr>
+<td>Graph rot</td>
+<td>Reverse-index staleness propagation on every main merge; 60-day <code>last_verified</code> decay flags; doc-drift miner as active re-verifier; CI fails on dangling or contradictory edges.</td>
+</tr>
+<tr>
+<td>Runaway token spend</td>
+<td>Cost ceiling in L3-0 (70% alert / 100% hard-stop); per-workflow <code>--max-turns</code>; WIP cap 2; dream loop first to shed.</td>
+</tr>
+<tr>
+<td>Agent touches high-risk code</td>
+<td>Deterministic path guard, seeded from <code>terminus/expertise-paths.md</code>. Never self-policed.</td>
+</tr>
+<tr>
+<td>Bot footprint on public repos</td>
+<td>Re-authoring plus trailer strip plus footprint-scan required check; private provenance ledger.</td>
+</tr>
+<tr>
+<td>Reviewer fatigue</td>
+<td>Judge verdict and self-reviews at the top of every PR body; WIP cap; spec fast-path; Slack digests instead of per-event pings; the ladder shrinks load over time.</td>
+</tr>
+<tr>
+<td>Silent pipeline death</td>
+<td>Heartbeat workflow from L3-0 — absence of output is itself an alert.</td>
+</tr>
+<tr>
+<td>State write race condition</td>
+<td>Hash-check composite action; every state write goes through it.</td>
+</tr>
+<tr>
+<td>Transcript secrets leaking into the dream loop</td>
+<td>Condensing script strips secrets and tool bodies before writing to <code>sessions/</code>; raw transcripts never persist.</td>
+</tr>
+<tr>
+<td>Ticket spam from release intelligence</td>
+<td>Threshold tuning in the rubric doc; WIP on <code>agent:proposed</code> visible on the board; human promotion is a hard gate.</td>
+</tr>
+<tr>
+<td>ICP doc goes stale, corrupting market scoring</td>
+<td>ICP is a graph node; staleness propagates when positioning-claim nodes change without it being updated.</td>
+</tr>
+<tr>
+<td>Release tag pushed with no GitHub release</td>
+<td>Heartbeat: if a tag exists with no <code>state/releases/&lt;tag&gt;/</code> entry after 24 hours, alert ops.</td>
+</tr>
+<tr>
+<td>Expertise path list goes stale as the codebase evolves</td>
+<td>The list lives in terminus; reviewing it is part of every postmortem that touches a guarded component.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="what-the-team-actually-does">What the team actually does</h2>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Who</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Apply <code>agent:queued</code> to a ticket</td>
+<td>Any team member</td>
+</tr>
+<tr>
+<td>Approve a spec PR</td>
+<td>Any team member (or fast-path skips it)</td>
+</tr>
+<tr>
+<td>Review + merge agent PRs at L1/L2</td>
+<td>Any team member</td>
+</tr>
+<tr>
+<td>Review + merge dream loop PRs (memory updates)</td>
+<td>Any team member</td>
+</tr>
+<tr>
+<td>Maintain expertise paths in terminus</td>
+<td>Engineering lead</td>
+</tr>
+<tr>
+<td>Review proposed release intelligence tickets</td>
+<td>PM</td>
+</tr>
+<tr>
+<td>Review the weekly metrics digest</td>
+<td>PM + engineering lead</td>
+</tr>
+<tr>
+<td>Update the blocked-names list</td>
+<td>PM</td>
+</tr>
+</tbody>
+</table>
+<p>The things that always require a human, regardless of ladder level: spec approval, memory writes (dream PRs), release intelligence ticket promotion, and — until a class reaches L3 — final merge.</p>
+<hr />
+<h2 id="adoption-sequence">Adoption sequence</h2>
+<p>The order is fixed. The pace is yours.</p>
+<p><strong>L1-0 · domain taxonomy + Mintlify shell + CODEOWNERS.</strong> Bootstrap the SSOT repo. Mine existing transcripts, PR comments, and ADRs into first-pass docs. Numbered domain folders, per-folder briefs. Nobody’s job changes yet; you’re rehearsing the pattern of “AI drafts, humans approve.”</p>
+<p><strong>L1-1 · frontmatter + the <code>.claude/</code> harness.</strong> Every document gets an owner and a status. The seven hooks go in. The persona PR reviewer starts running on every SSOT PR. This is the phase where the team gets comfortable being reviewed by a bot.</p>
+<p><strong>L1-2 · read-only ops loops + provenance + drift.</strong> Sixteen scheduled digests, all grounded in the SSOT, all posting to ops (never leadership), all with heartbeats. Provenance trailers and footprint-scan on every agent commit. The system is producing scheduled autonomous work; nothing customer-facing yet.</p>
+<p><strong>L2-0 → L2-2 · the outbound loop.</strong> Twelve agents, file-based state machine, judges pulling rubrics from the SSOT via sparse checkout, golden sets with date-placeholder templating, the send-side kill switch. The system is now doing customer-facing work — fail-closed, rate-capped, and pause-on-reply.</p>
+<p><strong>L3-0 + L3-1 · safety floor and knowledge graph.</strong> No production code touched yet; the graph regenerates on every merge and the staleness digest is live.</p>
+<p><strong>L3-2 · humans review everything.</strong> Five tickets end-to-end. No autonomy yet. You’re buying the time savings from automated implementation plus structured reviews, not autonomous merges. This is the phase where team trust is built or broken.</p>
+<p><strong>L3-3 + L3-4 · judges and release intelligence.</strong> Judges become required checks; releases start scoring themselves and proposing template and docs tickets. The pipeline is now finding its own work.</p>
+<p><strong>L3-5 · dreaming loop.</strong> The system starts mining its own transcripts, review deltas, and staleness signals. Memory refreshes itself; humans approve.</p>
+<p><strong>L3-6 · earned autonomy.</strong> First ticket class reaches L3 on the autonomy ladder. Choose the lowest-blast-radius class in your backlog — codegen from OpenAPI specs, SDK regeneration, docs scaffolding, test scaffolding. Not your core engine.</p>
+<p><strong>Skip nothing in order.</strong> The SSOT and the first loop are prerequisites for everything else. Teams that skip to the coding harness first build an agent that confidently produces PRs contradicting their own ADRs. Then they blame the model.</p>
+<hr />
+<h2 id="hand-this-to-your-own-claude">Hand this to your own Claude</h2>
+<p>If you’ve read this far as a human: the ask is smaller than it looks. L1 and L2 require no tools you don’t already run — a git host, CI, and a frontier model. L3-0 through L3-3 require the same. L3-4 and L3-5 are discipline, not infrastructure. L3-6 is a scorekeeping decision your team makes together.</p>
+<blockquote>
+<p><strong>IF YOU’RE AN AI AGENT READING THIS, WORK IN THIS ORDER</strong></p>
+<ol type="1">
+<li>Inventory the team’s repos and existing systems against the phase readiness gates from L1-0 through L3-6. For every gate that isn’t met, flag it as a gap tied to a specific phase. Don’t invent answers where documents, tokens, channels, or values are missing.</li>
+<li>Present the gap list to a human, grouped by level (L1 / L2 / L3). Get explicit approval on how to resolve each gap before proceeding.</li>
+<li>Implement phases in strict order: L1-0 → L1-1 → L1-2 → L2-0 → L2-1 → L2-2 → L3-0 → L3-1 → L3-2 → L3-3 → L3-4 → L3-5 → L3-6. Never start a phase until the previous phase’s readiness gate is verified and a human has confirmed.</li>
+<li>At each phase’s readiness gate, stop and report pass/fail with the evidence that satisfies (or fails) each criterion. Proceed only on explicit approval.</li>
+<li>Where this document says “your X” or “your team’s Y”, substitute the value you inventoried. If a value is blank because the human hasn’t decided, pause and ask.</li>
+</ol>
+<p><strong>Do not:</strong> - Create files in product repos before L3-2 - Ship a Level 2 loop that writes anything customer-facing before L1-2’s readiness gate has been met - Open PRs before the bot account and PAT matrix are confirmed (L3-0 exit) - Merge anything at any phase — merges are always human - Invent PAT scopes, Slack channel IDs, sprint board numbers, rubric weights, or suppression list entries. Confirm each from the human or from live API calls. - Skip levels because a lower level “looks done” from the outside. Verify against the readiness gates, not the folder tree.</p>
+</blockquote>
+<hr />
+<p>The system you’ll end up with isn’t an autonomous engineering team. It’s your engineering team’s judgment, running continuously, with your senior engineers finally free to spend their hours on the code paths that actually require them.</p>
+<p>The humans aren’t in the loop as a courtesy. They’re in the loop as the design.</p>
+<hr />
+<h2 id="about-the-author">About the author</h2>
+<p>Charlcye Mitchell is a Director of Engineering Operations, management consultant, software engineering strategist, and agentic systems architect. This pattern is what she does when founders say “add AI.”</p>
+<p>Connect: <a href="https://linkedin.com/in/camitchell">LinkedIn</a> · <a href="https://charlcye.ai">charlcye.ai</a></p>
+<p><em>Papers, template, and skeletons: <a href="https://github.com/weprintmoney/startup-intel-stack">github.com/weprintmoney/startup-intel-stack</a></em></p>
+
+      </div>
+
+      <p class="paper-back">
+        <a href="/#writing">← Back to writing</a>
+      </p>
+
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <p>© Charlcye Mitchell · CMMC Inc LLC</p>
+      <p>
+        <a href="https://github.com/weprintmoney/charlcye-ai">Site source</a>
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
