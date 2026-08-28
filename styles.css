@@ -380,6 +380,12 @@ footer a:hover {
   border-color: var(--accent-hover);
 }
 
+.paper-body a.cta-button,
+.paper-header a.cta-button {
+  color: #fff;
+  border-bottom: 0;
+}
+
 .paper-header .cta-button {
   margin-top: 1.5rem;
 }
