@@ -1,0 +1,19 @@
+# Charlcye Mitchell
+
+> Charlcye Mitchell translates between finance and engineering, turning stated goals into shipping systems that meet the real ones. Director of Engineering Operations, management consultant, software engineering strategist and agentic systems architect.
+
+## About
+- [Home](https://charlcye.ai/): positioning, work lanes, contact
+- [Press and bios](https://charlcye.ai/press/): short, medium and long bio to reuse verbatim
+
+## Writing
+- [Context, Loops, Graphs](https://charlcye.ai/writing/context-loops-graphs/): field notes on agentic systems
+- [The Coding Harness](https://charlcye.ai/writing/the-coding-harness/): field notes on agentic coding
+- [Merge Conflict newsletter](https://read.charlcye.ai): reconciling the merge conflict between finance and engineering
+
+## Work
+- [AI adoption programs](https://charlcye.ai/ai-adoption/): executive overview, 30-day context-repository build, leadership workshops
+
+## Profiles
+- [LinkedIn](https://linkedin.com/in/camitchell)
+- [GitHub](https://github.com/weprintmoney)
