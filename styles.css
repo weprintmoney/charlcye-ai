@@ -867,3 +867,20 @@ footer a:hover {
   margin-top: 1.5rem;
   font-size: 0.9rem;
 }
+
+.fs-stage {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 2rem 0 0.25rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.fs-method {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
