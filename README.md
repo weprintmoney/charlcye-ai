@@ -26,6 +26,7 @@ Every push to `main` triggers a deploy at
 - `index.html` — the entire site
 - `styles.css` — one stylesheet
 - `favicon.svg` — inline SVG favicon
+- `funding-signal/` — weekly funding signal pages and feed (generated, static HTML)
 - `_redirects` — Cloudflare Pages redirect rules (currently just `www` → apex)
 
 ## Contact
