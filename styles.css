@@ -1216,13 +1216,13 @@ footer a:hover {
   font-size: 0.98rem;
 }
 
-.abo-video { margin: 1.25rem 0 0; }
+.abo-video { margin: 1.25rem 0 0; width: 100%; max-width: 100%; min-width: 0; }
 
 .abo-video video {
   display: block;
   width: 100%;
+  max-width: 100%;
   height: auto;
-  aspect-ratio: 16 / 9;
   border-radius: 6px;
   background: var(--card-bg);
   box-shadow: var(--card-shadow);
