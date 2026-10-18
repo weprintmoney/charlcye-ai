@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Agent Back Office — Charlcye Mitchell</title>
+  <meta name="description" content="Four roles any team can run in GitHub: monitors watch, writers draft, checkers gate, people decide. The visual on-ramp to Context, Loops, Graphs, with starter code." />
+  <meta name="author" content="Charlcye Mitchell" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="The Agent Back Office" />
+  <meta property="og:description" content="Four roles any team can run in GitHub: monitors watch, writers draft, checkers gate, people decide. The visual on-ramp to Context, Loops, Graphs, with starter code." />
+  <meta property="og:url" content="https://charlcye.ai/writing/the-agent-back-office/" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="The Agent Back Office" />
+  <meta name="twitter:description" content="Four roles any team can run in GitHub: monitors watch, writers draft, checkers gate, people decide. The visual on-ramp to Context, Loops, Graphs, with starter code." />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+  <nav class="site-nav">
+    <div class="site-nav-inner">
+      <a class="site-nav-brand" href="/">Charlcye Mitchell</a>
+      <ul class="site-nav-links">
+        <li><a href="/#writing">Writing</a></li>
+        <li><a href="/#work">Work</a></li>
+        <li><a href="/#connect">Connect</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="paper-main">
+    <article class="paper abo">
+
+      <header class="paper-header">
+        <p class="eyebrow">VISUAL EXPLAINER · START HERE</p>
+        <h1>The Agent Back Office</h1>
+        <p class="paper-subtitle">Four roles any dev team can run in GitHub. Monitors watch, writers draft, checkers gate, people decide.</p>
+        <p class="paper-byline">
+          By <a href="https://linkedin.com/in/camitchell">Charlcye Mitchell</a>
+          — <span class="nowrap">Director of Engineering Operations</span>,
+          <span class="nowrap">agentic systems architect</span>,
+          <span class="nowrap">field notes writer</span>.
+        </p>
+      </header>
+
+      <div class="paper-body">
+<blockquote>
+<p><strong>THE WHOLE PAPER IN FOUR LINES</strong></p>
+<ol type="1">
+<li>Most of a team's operating work is watching for change, writing it up, and checking the write-up is still true. Split it into four roles: monitors, writers, checkers, and you.</li>
+<li>Every role runs as a GitHub Actions job and every result is an issue, a PR or a commit. You review agent work the way you review a teammate's. No new dashboard, no vector store, no orchestration framework.</li>
+<li>Scripts block merges. Models only draft and advise. A person merges, or doesn't.</li>
+<li>Adopt one role at a time. Each pays for itself without the next. Most teams should run the first three for a month before letting a writer touch code.</li>
+</ol>
+</blockquote>
+<hr />
+<h2 id="who-this-is-for">Who this is for</h2>
+<p>You're on a dev team, or you run one, and you've seen agents write code but you haven't seen them run a process. This is the picture version of the two longer papers. <a href="/writing/context-loops-graphs/"><em>Context, Loops, Graphs</em></a> explains why the levels go in the order they do; <a href="/writing/the-coding-harness/"><em>The Coding Harness</em></a> names every workflow and gate. Read this one first, then go to whichever of those matches the step you're on.</p>
+<p>The pattern comes from a ten-person software company, where it runs engineering, product research, market watching and outbound sales. Your sources will differ. The four roles stay the same.</p>
+
+<div class="abo-roles">
+  <div class="r-mon"><b>Monitors</b>Watch a source on a schedule and file what changed.<p>New CVEs against your lockfile. A competitor's changelog.</p></div>
+  <div class="r-writer"><b>Writers</b>Draft an artifact as a PR. Never merge it.<p>A spec, a fix, a decision record, a docs patch.</p></div>
+  <div class="r-check"><b>Checkers</b>Plain scripts that fail a PR when something drifts.<p>A doc names a deleted file. A plan was edited after shipping.</p></div>
+  <div class="r-human"><b>You</b>Decide what goes in and what merges.<p>Label a ticket. Merge a spec. Close a bad draft.</p></div>
+</div>
+
+<div class="abo-legend" aria-label="Diagram key">
+  <span><i class="abo-sw mon"></i>Monitor</span>
+  <span><i class="abo-sw writer"></i>Writer</span>
+  <span><i class="abo-sw"></i>Script or workflow step, no model</span>
+  <span><i class="abo-sw human"></i>You</span>
+  <span><i class="abo-sw file"></i>Optional or outside the repo</span>
+</div>
+
+<hr />
+<h2 id="monitors">Role 1 · Monitors</h2>
+<h3>A monitor turns "someone should keep an eye on that" into a scheduled job</h3>
+<p>If anyone on your team checks something by hand every week, that check can be a monitor. Each one has the same shape: a script fetches, a model judges what's new against what your team already knows, and a script writes the result. The model never touches the repo directly.</p>
+
+<figure class="abo-wide">
+  <div class="abo-scroll">
+  <svg viewBox="0 0 1180 360" role="img" aria-label="Monitor anatomy. A script fetches from a source. If nothing is new the run stops with no model call. If the fetch fails the run fails and alerts. New items go to a model that judges them against your context file and writes one JSON. A script validates the JSON, writes files, opens a PR or issue and posts counts to Slack. You review and merge.">
+    <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+    <rect x="20" y="150" width="150" height="70" rx="6" class="n-file"/>
+    <text x="95" y="180" text-anchor="middle" class="t">Source</text>
+    <text x="95" y="199" text-anchor="middle" class="ts">feed, API, repo, site</text>
+    <rect x="210" y="150" width="150" height="70" rx="6" class="n-det"/>
+    <text x="285" y="180" text-anchor="middle" class="t">Fetch</text>
+    <text x="285" y="199" text-anchor="middle" class="ts">script + "seen" list</text>
+    <rect x="400" y="150" width="140" height="70" rx="6" class="n-det"/>
+    <text x="470" y="180" text-anchor="middle" class="t">Anything new?</text>
+    <text x="470" y="199" text-anchor="middle" class="ts">script</text>
+    <rect x="580" y="150" width="170" height="70" rx="6" class="n-mon"/>
+    <text x="665" y="180" text-anchor="middle" class="t">Judge</text>
+    <text x="665" y="199" text-anchor="middle" class="ts">model writes one JSON</text>
+    <rect x="790" y="150" width="170" height="70" rx="6" class="n-det"/>
+    <text x="875" y="180" text-anchor="middle" class="t">Apply</text>
+    <text x="875" y="199" text-anchor="middle" class="ts">script validates, writes</text>
+    <rect x="1000" y="150" width="160" height="70" rx="6" class="n-human"/>
+    <text x="1080" y="180" text-anchor="middle" class="t">You</text>
+    <text x="1080" y="199" text-anchor="middle" class="ts">merge or close</text>
+    <rect x="580" y="30" width="170" height="64" rx="6" class="n-det" style="stroke-width:2.5"/>
+    <text x="665" y="56" text-anchor="middle" class="t">Your context</text>
+    <text x="665" y="76" text-anchor="middle" class="ts">criteria, stack, priorities</text>
+    <rect x="790" y="30" width="170" height="64" rx="6" class="n-file"/>
+    <text x="875" y="56" text-anchor="middle" class="t">Slack</text>
+    <text x="875" y="76" text-anchor="middle" class="ts">one line, counts only</text>
+    <rect x="200" y="280" width="170" height="56" rx="6" class="n-file"/>
+    <text x="285" y="303" text-anchor="middle" class="tl">fetch failed → run fails</text>
+    <text x="285" y="319" text-anchor="middle" class="tl">silence never means "none"</text>
+    <rect x="390" y="280" width="160" height="56" rx="6" class="n-file"/>
+    <text x="470" y="303" text-anchor="middle" class="tl">nothing new → stop</text>
+    <text x="470" y="319" text-anchor="middle" class="tl">no model call, $0</text>
+    <path d="M170 185 H206" class="e" marker-end="url(#a5)"/>
+    <path d="M360 185 H396" class="e" marker-end="url(#a5)"/>
+    <path d="M540 185 H576" class="e" marker-end="url(#a5)"/>
+    <text x="558" y="176" text-anchor="middle" class="tl">yes</text>
+    <path d="M750 185 H786" class="e" marker-end="url(#a5)"/>
+    <path d="M960 185 H996" class="e" marker-end="url(#a5)"/>
+    <text x="978" y="176" text-anchor="middle" class="tl">PR</text>
+    <path d="M665 94 V146" class="e" marker-end="url(#a5)"/>
+    <text x="673" y="124" class="tl">reads</text>
+    <path d="M875 150 V98" class="e" marker-end="url(#a5)"/>
+    <path d="M285 220 V276" class="e e-dash" marker-end="url(#a5)"/>
+    <path d="M470 220 V276" class="e e-dash" marker-end="url(#a5)"/>
+  </svg>
+  </div>
+  <figcaption>The "Your context" box is what makes a monitor worth reading. Without it the model can only report that something changed. With your stack, criteria and priorities in a file it reads, it can say what the change means for you and skip the 90% that doesn't matter. That file is the Level 1 context store from <em>Context, Loops, Graphs</em>, and a monitor is the cheapest reason to start one.</figcaption>
+</figure>
+
+<h3>The monitors we run</h3>
+<table class="abo-mon-tbl">
+  <thead><tr><th>Monitor</th><th>Watches, judged against</th><th>Cadence</th><th>Produces</th></tr></thead>
+  <tbody>
+    <tr class="grp"><td colspan="4">Engineering signal</td></tr>
+    <tr><td>CVE monitor</td><td>New CVEs, against the dependencies we actually ship</td><td>weekly</td><td>Tracker rows in a PR</td></tr>
+    <tr><td>Dependency triage</td><td>Open Dependabot PRs, by bump size and check status</td><td>every 6h</td><td>A verdict per PR; merges safe patches once trusted</td></tr>
+    <tr><td>Docs drift review</td><td>The week's merged code, against the public docs</td><td>weekly</td><td>A docs PR</td></tr>
+    <tr><td>Engineering signals</td><td>Papers, HN, competitor engineering posts, against our roadmap</td><td>weekly</td><td>A signals page PR</td></tr>
+    <tr><td>Review queue</td><td>Org PRs waiting on a reviewer</td><td>weekdays</td><td>One Slack digest</td></tr>
+    <tr class="grp"><td colspan="4">Product signal</td></tr>
+    <tr><td>Release intelligence</td><td>Every merged PR in a release, against our target-customer rubric</td><td>every 6h</td><td>Proposed backlog tickets</td></tr>
+    <tr><td>QA status</td><td>Test harness results across repos</td><td>weekly</td><td>A status page commit</td></tr>
+    <tr><td>Meeting sync</td><td>Yesterday's call notes</td><td>daily</td><td>Notes filed where the team looks</td></tr>
+    <tr class="grp"><td colspan="4">Market signal</td></tr>
+    <tr><td>Competitive signals</td><td>Competitor launches and chatter, against our positioning</td><td>weekly</td><td>Battlecard drafts in a PR</td></tr>
+    <tr><td>Partner releases</td><td>Upstream releases from the platforms we integrate with</td><td>weekly</td><td>An updates PR</td></tr>
+    <tr><td>Regulatory</td><td>Rule changes in our buyers' industries</td><td>weekly</td><td>A compliance notes PR</td></tr>
+    <tr><td>Procurement</td><td>Public RFP notices, against our qualification criteria</td><td>daily</td><td>Qualified notices in a PR</td></tr>
+    <tr class="grp"><td colspan="4">The system watching itself</td></tr>
+    <tr><td>Cost digest</td><td>Model spend per workflow, against a weekly ceiling</td><td>twice weekly</td><td>Slack digest, auto-pause at the cap</td></tr>
+    <tr><td>Dream loop</td><td>The agents' own transcripts and every human correction</td><td>weekly</td><td>One proposed memory PR</td></tr>
+  </tbody>
+</table>
+
+<h3>Yours might be</h3>
+<div class="abo-yours">
+  <div><h4>Backend or API</h4><ul><li>Major versions and end-of-life dates in your dependency stack</li><li>CVEs that hit your lockfile, not the whole ecosystem</li><li>p95 latency after each deploy</li></ul></div>
+  <div><h4>Frontend or mobile</h4><ul><li>Store reviews that mention crashes or a specific screen</li><li>Bundle size growth per release</li><li>OS and browser deprecations that affect you</li></ul></div>
+  <div><h4>Data or ML</h4><ul><li>Model deprecations and price changes from your providers</li><li>Eval scores drifting between runs</li><li>Upstream schema changes in sources you ingest</li></ul></div>
+  <div><h4>Platform or infra</h4><ul><li>Cloud service deprecation notices</li><li>Certificates and keys nearing expiry</li><li>Cost anomalies by service</li></ul></div>
+  <div><h4>Product</h4><ul><li>Support tickets clustered by feature</li><li>Competitor changelogs and pricing pages</li><li>Feature flags nobody has touched in 90 days</li></ul></div>
+  <div><h4>Games or solo projects</h4><ul><li>Engine and framework releases, with a cooldown before upgrading</li><li>TODOs and skipped tests older than a month</li><li>Player reviews mentioning bugs</li></ul></div>
+</div>
+<div class="abo-callout"><strong>How to pick your first one:</strong> list what someone on the team checks by hand on a schedule, then pick the item where a miss costs the most. That's your first monitor.</div>
+
+<hr />
+<h2 id="writers">Role 2 · Writers</h2>
+<h3>Writers draft, one PR at a time. Chained, they take a ticket to merged code.</h3>
+<p>A writer is any job that drafts an artifact and opens a PR: a spec, a fix, a decision record, a docs patch. Chain them and you have a coding loop. Workflow YAML owns the control flow, so a model only works inside one step and never chooses the next one. People sit at three gates. Click a stage to see what it produces.</p>
+
+<figure class="abo-wide">
+  <div class="abo-scroll">
+  <svg id="loop" viewBox="0 0 1180 450" role="group" aria-label="Coding loop. You label a ticket. Intake claims it every 10 minutes. A writer drafts a spec PR. You merge the spec, which approves it. A writer plans then codes, and the job fails if any checklist item is unchecked. Two fresh reviewers and a rubric judge score the PR, with up to three revise rounds. You review and merge. A reaper records the outcome.">
+    <defs>
+      <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+      <marker id="a2l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah-loop"/></marker>
+    </defs>
+    <rect x="0" y="40" width="1180" height="100" class="n-lane"/>
+    <rect x="0" y="260" width="1180" height="100" class="n-lane"/>
+    <text x="10" y="62" class="lane">YOU</text>
+    <text x="10" y="172" class="lane">WORKFLOWS</text>
+    <text x="10" y="282" class="lane">WRITERS</text>
+    <path d="M215 90 H290 V161" class="e" marker-end="url(#a2)"/>
+    <text x="222" y="80" class="tl">claim</text>
+    <path d="M350 200 H425 V271" class="e" marker-end="url(#a2)"/>
+    <text x="358" y="190" class="tl">dispatch</text>
+    <path d="M485 310 H560 V129" class="e" marker-end="url(#a2)"/>
+    <text x="568" y="250" class="tl">spec PR</text>
+    <path d="M620 90 H695 V271" class="e" marker-end="url(#a2)"/>
+    <text x="627" y="80" class="tl">merged</text>
+    <text x="703" y="200" class="tl">dispatch</text>
+    <path d="M755 310 H766" class="e" marker-end="url(#a2)"/>
+    <path d="M890 310 H965 V129" class="e" marker-end="url(#a2)"/>
+    <text x="973" y="250" class="tl">PR + reviews</text>
+    <text x="973" y="264" class="tl">+ score</text>
+    <path d="M1025 90 H1100 V161" class="e" marker-end="url(#a2)"/>
+    <text x="1032" y="80" class="tl">merged</text>
+    <path d="M830 345 V385 H695 V349" class="e e-loop" marker-end="url(#a2l)"/>
+    <text x="762" y="405" text-anchor="middle" class="tl tl-loop">score below 80 → revise</text>
+    <text x="762" y="420" text-anchor="middle" class="tl tl-loop">max 3 rounds, $ cap per ticket</text>
+    <path d="M425 345 V378" class="e e-dash" marker-end="url(#a2)"/>
+    <rect x="335" y="382" width="180" height="50" rx="6" class="n-file"/>
+    <text x="425" y="403" text-anchor="middle" class="tl">or stop early and ask:</text>
+    <text x="425" y="419" text-anchor="middle" class="tl">clarify, blocked, unfit</text>
+    <g class="stage" data-k="label" tabindex="0" role="button" aria-label="Label ticket">
+      <rect x="95" y="55" width="120" height="70" rx="6" class="n-human"/>
+      <text x="155" y="85" text-anchor="middle" class="t">Label ticket</text>
+      <text x="155" y="104" text-anchor="middle" class="tm">agent:queued</text></g>
+    <g class="stage" data-k="intake" tabindex="0" role="button" aria-label="Intake">
+      <rect x="230" y="165" width="120" height="70" rx="6" class="n-det"/>
+      <text x="290" y="195" text-anchor="middle" class="t">Intake</text>
+      <text x="290" y="214" text-anchor="middle" class="ts">every 10 min</text></g>
+    <g class="stage" data-k="spec" tabindex="0" role="button" aria-label="Draft spec">
+      <rect x="365" y="275" width="120" height="70" rx="6" class="n-agent"/>
+      <text x="425" y="305" text-anchor="middle" class="t">Draft spec</text>
+      <text x="425" y="324" text-anchor="middle" class="ts">cites file:line</text></g>
+    <g class="stage" data-k="approve" tabindex="0" role="button" aria-label="Merge spec">
+      <rect x="500" y="55" width="120" height="70" rx="6" class="n-human"/>
+      <text x="560" y="85" text-anchor="middle" class="t">Merge spec</text>
+      <text x="560" y="104" text-anchor="middle" class="ts">= approval</text></g>
+    <g class="stage" data-k="plan" tabindex="0" role="button" aria-label="Plan, then code">
+      <rect x="635" y="275" width="120" height="70" rx="6" class="n-agent"/>
+      <text x="695" y="305" text-anchor="middle" class="t">Plan, then code</text>
+      <text x="695" y="324" text-anchor="middle" class="ts">checklist-gated</text></g>
+    <g class="stage" data-k="judge" tabindex="0" role="button" aria-label="Review and judge">
+      <rect x="770" y="275" width="120" height="70" rx="6" class="n-agent"/>
+      <text x="830" y="305" text-anchor="middle" class="t">Review + judge</text>
+      <text x="830" y="324" text-anchor="middle" class="ts">fresh context</text></g>
+    <g class="stage" data-k="merge" tabindex="0" role="button" aria-label="Review and merge">
+      <rect x="905" y="55" width="120" height="70" rx="6" class="n-human"/>
+      <text x="965" y="85" text-anchor="middle" class="t">Review, merge</text>
+      <text x="965" y="104" text-anchor="middle" class="ts">you're last</text></g>
+    <g class="stage" data-k="reap" tabindex="0" role="button" aria-label="Record outcome">
+      <rect x="1040" y="165" width="120" height="70" rx="6" class="n-det"/>
+      <text x="1100" y="195" text-anchor="middle" class="t">Record</text>
+      <text x="1100" y="214" text-anchor="middle" class="ts">ledger, card</text></g>
+  </svg>
+  </div>
+  <div class="abo-panel" id="panel" aria-live="polite">
+    <div class="abo-panel-head"><h3 id="p-title"></h3><span class="abo-who" id="p-who"></span></div>
+    <p id="p-body"></p>
+    <div class="abo-tag">Example output</div>
+    <pre id="p-out"></pre>
+  </div>
+</figure>
+
+<hr />
+<h2 id="checkers">Role 3 · Checkers</h2>
+<h3>Checkers block the merge. Writers clean up on a schedule.</h3>
+<p>This half pays off even if you never let an agent write code. A check that blocks a merge has to be deterministic, or people learn to ignore it. A model is good at noticing that a doc reads stale or that a merged plan implies a decision, so it drafts and someone else merges.</p>
+
+<figure class="abo-wide">
+  <div class="abo-scroll">
+  <svg viewBox="0 0 1040 450" role="img" aria-label="A pull request passes four deterministic checks that block merge: docs drift, spec lint, retired claims and plan freeze. After merge, four scheduled jobs run: a decision-record drafter, a weekly docs review, a skill-drift check and the weekly note. Their output is issues and draft PRs that a person merges, which become the next pull request.">
+    <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+    <text x="235" y="28" class="lane">ON EVERY PR · BLOCKS MERGE · NO MODEL</text>
+    <text x="745" y="28" class="lane">ON A SCHEDULE · WRITER DRAFTS · YOU DECIDE</text>
+    <rect x="20" y="165" width="150" height="70" rx="6" class="n-human"/>
+    <text x="95" y="195" text-anchor="middle" class="t">Pull request</text>
+    <text x="95" y="214" text-anchor="middle" class="ts">code + docs</text>
+    <rect x="235" y="42" width="250" height="62" rx="6" class="n-det"/>
+    <text x="251" y="66" class="t">Docs drift</text>
+    <text x="251" y="87" class="ts">paths named in docs still exist</text>
+    <rect x="235" y="114" width="250" height="62" rx="6" class="n-det"/>
+    <text x="251" y="138" class="t">Spec lint</text>
+    <text x="251" y="159" class="ts">required sections, scope, non-goals</text>
+    <rect x="235" y="186" width="250" height="62" rx="6" class="n-det"/>
+    <text x="251" y="210" class="t">Retired claims</text>
+    <text x="251" y="231" class="ts">removed features aren't described as live</text>
+    <rect x="235" y="258" width="250" height="62" rx="6" class="n-det"/>
+    <text x="251" y="282" class="t">Plan freeze</text>
+    <text x="251" y="303" class="ts">an implemented plan is never edited</text>
+    <rect x="545" y="165" width="140" height="70" rx="6" class="n-det" style="stroke-width:2.5"/>
+    <text x="615" y="195" text-anchor="middle" class="t">main</text>
+    <text x="615" y="214" text-anchor="middle" class="ts">docs match code</text>
+    <rect x="745" y="42" width="275" height="62" rx="6" class="n-agent"/>
+    <text x="761" y="66" class="t">Decision-record drafter</text>
+    <text x="761" y="87" class="ts">each merged plan → a record PR</text>
+    <rect x="745" y="114" width="275" height="62" rx="6" class="n-agent"/>
+    <text x="761" y="138" class="t">Docs review · weekly</text>
+    <text x="761" y="159" class="ts">reads the tree for stale claims</text>
+    <rect x="745" y="186" width="275" height="62" rx="6" class="n-det"/>
+    <text x="761" y="210" class="t">Skill drift · weekdays</text>
+    <text x="761" y="231" class="ts">agent skills citing moved code</text>
+    <rect x="745" y="258" width="275" height="62" rx="6" class="n-agent"/>
+    <text x="761" y="282" class="t">Weekly note</text>
+    <text x="761" y="303" class="ts">one issue: debt + upgrades, actions only</text>
+    <rect x="745" y="368" width="275" height="56" rx="6" class="n-file"/>
+    <text x="882" y="392" text-anchor="middle" class="t">Issues + draft PRs</text>
+    <text x="882" y="410" text-anchor="middle" class="ts">you pick what to merge</text>
+    <path d="M170 200 H200 V73 H231" class="e" marker-end="url(#a3)"/>
+    <path d="M200 145 H231" class="e" marker-end="url(#a3)"/>
+    <path d="M200 217 H231" class="e" marker-end="url(#a3)"/>
+    <path d="M200 200 V289 H231" class="e" marker-end="url(#a3)"/>
+    <path d="M485 73 H515 V289 H485" class="e"/>
+    <path d="M485 145 H515 M485 217 H515" class="e"/>
+    <path d="M515 200 H541" class="e" marker-end="url(#a3)"/>
+    <text x="519" y="190" class="tl">all pass</text>
+    <path d="M685 200 H715 V73 H741" class="e" marker-end="url(#a3)"/>
+    <path d="M715 145 H741" class="e" marker-end="url(#a3)"/>
+    <path d="M715 217 H741" class="e" marker-end="url(#a3)"/>
+    <path d="M715 200 V289 H741" class="e" marker-end="url(#a3)"/>
+    <path d="M882 320 V364" class="e" marker-end="url(#a3)"/>
+    <path d="M745 396 H95 V239" class="e e-dash" marker-end="url(#a3)"/>
+    <text x="420" y="388" text-anchor="middle" class="tl">becomes the next PR</text>
+  </svg>
+  </div>
+</figure>
+
+<div class="abo-pair">
+  <div>
+    <div class="abo-tag">Docs-drift check failing a rename PR</div>
+<pre><span class="dim">$ python3 scripts/check_docs_drift.py</span>
+README.md:42: `src/cache/store.py` does not exist
+docs/runbook.md:17: `scripts/reindex.sh` does not exist
+<span class="no">Error: Process completed with exit code 1.</span></pre>
+  </div>
+  <div>
+    <div class="abo-tag">The Monday issue</div>
+<pre><span class="ag">Weekly note: 2026-10-19</span>
+<span class="dim">Only items with a next step.</span>
+
+- [ ] src/api/auth.py:212 · TODO(token refresh) is 9 months
+      old and now hit on every request. Move it to middleware.
+- [ ] Bump serde 1.0.210 → 1.0.214. Released 52 days ago,
+      tests pass on a throwaway branch.
+- [ ] tests/test_sync.py is skipped since #388 merged.
+      Re-enable it or delete it.</pre>
+  </div>
+</div>
+
+<hr />
+<h2 id="what-it-adds-up-to">What it adds up to</h2>
+<h3>Your week, before and after</h3>
+<table class="abo-ba">
+  <thead><tr><th>When</th><th>Today</th><th>With the back office</th></tr></thead>
+  <tbody>
+    <tr><td>Something changes upstream</td><td class="before">You find out when it breaks</td><td>A monitor files it with what it means for your code, and a writer may already have a PR open.</td></tr>
+    <tr><td>A ticket lands</td><td class="before">You read the code and work out a plan in your head</td><td>A spec PR shows up that cites <code>file:line</code> for current behavior and lists acceptance criteria. You edit it or merge it.</td></tr>
+    <tr><td>Building it</td><td class="before">You write it, then wait for review</td><td>You write it yourself or hand it to the writer. Either way the PR arrives with two reviews and a rubric score already attached.</td></tr>
+    <tr><td>Docs</td><td class="before">They drift until a new hire trips on them</td><td>The PR that renames a file fails if any doc still points at the old path.</td></tr>
+    <tr><td>Decisions</td><td class="before">Scattered across Slack threads and closed PRs</td><td>Each merged plan drafts a decision record PR. Old ones are never edited, only superseded.</td></tr>
+    <tr><td>Tech debt</td><td class="before">A backlog nobody opens</td><td>One issue every Monday, listing only the items with a next step.</td></tr>
+    <tr><td>Review</td><td class="before">You're the first reader</td><td>You're the last reader. Two fresh-context reviewers and a judge have already been through it.</td></tr>
+  </tbody>
+</table>
+<ul class="abo-proof">
+  <li><strong>33 tickets → 31 spec PRs</strong>The first full run. The other 2 were refused because they touched code that needs a named expert.</li>
+  <li><strong>~2 of 3 open questions answered</strong>Most questions in the first drafted specs could be answered from the source, so the drafter now answers them and cites where.</li>
+  <li><strong>$1.56 for a two-round fix</strong>Judge failed round one at 50/100, the reviser fixed it, and round two passed at 92.</li>
+  <li><strong>~$0.02 per decision record</strong>Drafting cost with a small open model through OpenRouter. A plan is about $0.06.</li>
+</ul>
+<p><em>Figures are from the reference implementation at the end of the page.</em></p>
+
+<hr />
+<h2 id="adopt-it">Adopt it one step at a time</h2>
+<h3>Four steps. Each one works without the next.</h3>
+<p>Start where the pain is. Steps 1 to 3 need no agent writing code at all, and most teams should live with them for a month before step 4. Every snippet below is complete; the Python script has been run against real repos, and the two workflows use the current inputs for the Claude Code GitHub action.</p>
+
+<div class="abo-rung">
+  <div class="abo-rung-n">1</div>
+  <h3>Fail PRs when docs point at code that's gone</h3>
+  <div class="abo-facts"><span><b>Model:</b> none</span><span><b>Adds:</b> one script, one workflow</span><span><b>Off switch:</b> delete the workflow</span></div>
+  <p>Every backticked path in your Markdown is checked against the tree. Plans and brainstorms are skipped, since they describe files that don't exist yet.</p>
+  <details>
+    <summary>Show the script and workflow</summary>
+    <div class="abo-codebox"><div class="file">scripts/check_docs_drift.py</div><button class="abo-copy" type="button">Copy</button>
+<pre>#!/usr/bin/env python3
+"""Fail a PR when a Markdown doc names a path in this repo that no longer exists."""
+import pathlib, re, subprocess, sys
+
+PATH = re.compile(r"`([\w-][\w.-]*(?:/[\w.-]+)+/?)`")  # `src/foo.py`, `docs/adr/`
+SKIP = ("docs/plans/", "docs/brainstorms/")             # plans describe files that don't exist yet
+
+def main() -> int:
+    docs = subprocess.run(["git", "ls-files", "*.md"], capture_output=True,
+                          text=True, check=True).stdout.split()
+    missing = []
+    for doc in (d for d in docs if not d.startswith(SKIP)):
+        here = pathlib.Path(doc).parent
+        for n, line in enumerate(pathlib.Path(doc).read_text().splitlines(), 1):
+            for ref in PATH.findall(line):
+                ref = ref.rstrip("/")
+                top = ref.split("/")[0]
+                # Judge only paths rooted in this repo (from the root or the doc's folder).
+                if not (pathlib.Path(top).is_dir() or (here / top).is_dir()):
+                    continue
+                if not (pathlib.Path(ref).exists() or (here / ref).exists()):
+                    missing.append(f"{doc}:{n}: `{ref}` does not exist")
+    print("\n".join(missing) or "docs-drift: every path named in docs exists")
+    return 1 if missing else 0
+
+if __name__ == "__main__":
+    sys.exit(main())</pre></div>
+    <div class="abo-codebox"><div class="file">.github/workflows/docs-drift.yml</div><button class="abo-copy" type="button">Copy</button>
+<pre>name: docs-drift
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_docs_drift.py</pre></div>
+  </details>
+</div>
+
+<div class="abo-rung">
+  <div class="abo-rung-n">2</div>
+  <h3>Keep decision records, and never edit an old one</h3>
+  <div class="abo-facts"><span><b>Model:</b> optional drafter</span><span><b>Adds:</b> a folder and a template</span><span><b>Off switch:</b> stop writing them</span></div>
+  <p>One file per decision. When a decision changes, write a new record that supersedes the old one, so the history stays readable. Once plans live in PRs, a writer can draft a record from each merged plan for you to accept or close.</p>
+  <details>
+    <summary>Show the template</summary>
+    <div class="abo-codebox"><div class="file">docs/decisions/0000-template.md</div><button class="abo-copy" type="button">Copy</button>
+<pre>---
+status: proposed        # proposed | accepted | superseded by NNNN
+date: YYYY-MM-DD
+---
+# NNNN · Short title of the decision
+
+## Context
+What forced a choice. Link the issue, PR or incident.
+
+## Decision
+What we chose, in one paragraph.
+
+## Alternatives considered
+Each rejected option and the reason it lost.
+
+## Consequences
+What gets easier, what gets harder, what we'll watch.</pre></div>
+  </details>
+</div>
+
+<div class="abo-rung">
+  <div class="abo-rung-n">3</div>
+  <h3>Add your first monitor</h3>
+  <div class="abo-facts"><span><b>Model:</b> any, via the Claude Code GitHub action</span><span><b>Adds:</b> one scheduled workflow + a context file</span><span><b>Off switch:</b> disable it in Actions</span></div>
+  <p>Change three things in the prompt: what to watch, what to judge it against, and what to produce. The example watches your own dependency stack, but the same file works for store reviews, cloud notices or a competitor's changelog. Its permissions let it read the repo and create one issue, nothing else. When it earns its keep, move the fetch into a script so a quiet week costs nothing.</p>
+  <details>
+    <summary>Show the workflow</summary>
+    <div class="abo-codebox"><div class="file">.github/workflows/monitor-dependencies.yml</div><button class="abo-copy" type="button">Copy</button>
+<pre>name: monitor-dependencies
+on:
+  schedule:
+    - cron: "0 13 * * 1"   # Mondays 13:00 UTC
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: --allowedTools "Read,Grep,Glob,WebFetch,Bash(gh issue create:*)"
+          prompt: |
+            WATCH: the dependency manifests in this repo. For each direct
+            dependency, check for new major versions, end-of-life dates and
+            published security advisories.
+            JUDGE AGAINST: docs/context/stack.md (what we run, what we can't
+            upgrade yet and why). Skip anything that file already explains.
+            Ignore releases less than 30 days old.
+            PRODUCE: ONE issue titled "Dependency watch: &lt;today's date&gt;" via
+            `gh issue create`. Only items someone can act on this week, each
+            a checkbox with the manifest file:line and a one-line next step.
+            If nothing qualifies, create no issue.</pre></div>
+  </details>
+</div>
+
+<div class="abo-rung">
+  <div class="abo-rung-n">4</div>
+  <h3>Chain writers from ticket to code</h3>
+  <div class="abo-facts"><span><b>Model:</b> a strong one for specs and judging</span><span><b>Adds:</b> a handful of workflows + a rubric</span><span><b>Off switch:</b> one repo variable pauses everything</span></div>
+  <p>Start with spec drafting only and keep writing the code yourself. Turn on implementation once the specs are good enough that you merge most of them unedited. The whole contract is a few labels:</p>
+  <div class="abo-labels">
+    <code>agent:queued</code><span>You opt a ticket in. Intake claims it within 10 minutes.</span>
+    <code>merge spec PR</code><span>Approves the spec and starts implementation.</span>
+    <code>close spec PR</code><span>Abandons the ticket. Nothing else happens.</span>
+    <code>groom:redo</code><span>The drafter found the ticket contradicts the code and handed it back.</span>
+    <code>PAUSED=true</code><span>Stops intake, drafting and implementation across the repo.</span>
+  </div>
+  <p>The full build order, with every workflow and gate, is in <a href="/writing/the-coding-harness/"><em>The Coding Harness</em></a>, phases L3-0 through L3-6.</p>
+</div>
+
+<hr />
+<h2 id="rules">Why you can leave it running</h2>
+<h3>Eight rules that keep agents inside the lines</h3>
+<div class="abo-rules">
+  <div><h3>Silence never means "nothing happened"</h3><p>If a monitor can't reach its source, the run fails and alerts. An empty report has to mean the source was checked and was quiet.</p></div>
+  <div><h3>Models write JSON, scripts write the repo</h3><p>The model returns a structured verdict. A script validates it, writes the files, opens the PR and posts the counts.</p></div>
+  <div><h3>The model never picks the next step</h3><p>Workflow YAML decides what runs after what. A model only decides things inside the step it was given.</p></div>
+  <div><h3>A merge is the approval</h3><p>Every writer's output is a PR. You can reject it, edit it, or <code>git revert</code> it after the fact.</p></div>
+  <div><h3>The writer never grades its own work</h3><p>Reviewers and the judge start from a fresh context with only the diff, the spec and the ticket.</p></div>
+  <div><h3>Scripts block, models advise</h3><p>Anything that can fail a merge is deterministic. Model output shows up as comments, scores and draft PRs.</p></div>
+  <div><h3>Everything has a ceiling</h3><p>Max turns per step, max revise rounds per PR, a cost cap per ticket and per week, and one variable that pauses it all.</p></div>
+  <div><h3>Untrusted text never reaches a shell</h3><p>Issue titles and bodies go into steps through <code>env:</code> as quoted variables, never interpolated into <code>run:</code>.</p></div>
+</div>
+
+<hr />
+<h2 id="reference-implementation">The reference implementation</h2>
+<h3>Four repos at a ten-person company</h3>
+<p>This runs today across four repos. One holds the context every loop reads: specs, decision records, rubrics. The others are loops that read from it and write back through PRs. The same four roles also run the outbound sales pipeline, so the pattern isn't specific to code.</p>
+
+<figure class="abo-wide">
+  <div class="abo-scroll">
+  <svg viewBox="0 0 1040 470" role="img" aria-label="internal-docs is the context store in the center, holding specs, decision records and rubrics. agent-ops reads rubrics from it and writes spec PRs back, and opens code PRs in product repos. sales-ops reads scoring rubrics from it. internal-tools ships shared skills to every engineer's Claude Code session. Engineers label tickets and merge PRs.">
+    <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+    <rect x="20" y="20" width="270" height="100" rx="6" class="n-det"/>
+    <text x="38" y="48" class="t">internal-tools</text>
+    <text x="38" y="70" class="ts">Claude Code plugin: 20 team skills</text>
+    <text x="38" y="89" class="ts">+ per-repo context for every session</text>
+    <rect x="370" y="20" width="300" height="100" rx="6" class="n-human"/>
+    <text x="388" y="48" class="t">Engineers</text>
+    <text x="388" y="70" class="ts">Label tickets, merge spec and code PRs</text>
+    <text x="388" y="89" class="ts">Failures land in one Slack channel</text>
+    <rect x="20" y="210" width="270" height="130" rx="6" class="n-det"/>
+    <text x="38" y="238" class="t">sales-ops</text>
+    <text x="38" y="260" class="ts">Same pattern, outside code:</text>
+    <text x="38" y="279" class="ts">find → score → draft emails →</text>
+    <text x="38" y="298" class="ts">nothing sends until a PR merges</text>
+    <text x="38" y="324" class="tm">31 workflows</text>
+    <rect x="370" y="210" width="300" height="130" rx="6" class="n-det" style="stroke-width:2.5"/>
+    <text x="388" y="238" class="t">internal-docs · context store</text>
+    <text x="388" y="260" class="ts">Specs, 42 ADRs, 53 decision records</text>
+    <text x="388" y="279" class="ts">Review rubrics, knowledge graph</text>
+    <text x="388" y="298" class="ts">Drift, lint and freshness checks</text>
+    <text x="388" y="324" class="tm">33 workflows</text>
+    <rect x="750" y="210" width="270" height="130" rx="6" class="n-det"/>
+    <text x="768" y="238" class="t">agent-ops · coding loop</text>
+    <text x="768" y="260" class="ts">Intake, spec, plan, code,</text>
+    <text x="768" y="279" class="ts">review, judge, revise</text>
+    <text x="768" y="298" class="ts">Queue state kept in git</text>
+    <text x="768" y="324" class="tm">29 workflows</text>
+    <rect x="750" y="400" width="270" height="56" rx="6" class="n-file"/>
+    <text x="885" y="433" text-anchor="middle" class="t">Product repos</text>
+    <path d="M370 70 H294" class="e" marker-end="url(#a1)"/>
+    <text x="332" y="62" text-anchor="middle" class="tl">install</text>
+    <path d="M520 120 V206" class="e" marker-end="url(#a1)"/>
+    <text x="528" y="168" class="tl">merge spec PRs</text>
+    <path d="M640 120 L800 206" class="e" marker-end="url(#a1)"/>
+    <text x="716" y="150" class="tl">label tickets</text>
+    <path d="M670 255 H746" class="e" marker-end="url(#a1)"/>
+    <text x="708" y="247" text-anchor="middle" class="tl">rubrics</text>
+    <path d="M750 305 H674" class="e" marker-end="url(#a1)"/>
+    <text x="712" y="297" text-anchor="middle" class="tl">spec PRs</text>
+    <path d="M370 275 H294" class="e" marker-end="url(#a1)"/>
+    <text x="332" y="267" text-anchor="middle" class="tl">rubrics</text>
+    <path d="M885 340 V396" class="e" marker-end="url(#a1)"/>
+    <text x="893" y="373" class="tl">code PRs</text>
+    <path d="M392 210 L236 124" class="e e-dash" marker-end="url(#a1)"/>
+    <text x="250" y="178" class="tl">skill-drift</text>
+    <text x="250" y="192" class="tl">check</text>
+  </svg>
+  </div>
+  <figcaption>Every arrow is a PR or a file read. The repos share no database and no service, so the only coupling is GitHub. In the language of the longer papers: <code>internal-docs</code> is Level 1, <code>sales-ops</code> is the Level 2 loop, and <code>agent-ops</code> is the Level 3 harness.</figcaption>
+</figure>
+
+<hr />
+<h2 id="hand-this-to-your-own-claude">Hand this to your own Claude</h2>
+<p>If you've read this far as a human: the first three steps need nothing you don't already have. A git host, CI, and a model API key. Step 4 is the build in <em>The Coding Harness</em>.</p>
+<blockquote>
+<p><strong>IF YOU'RE AN AI AGENT READING THIS, WORK IN THIS ORDER</strong></p>
+<ol type="1">
+<li>Inventory this repo's Markdown for backticked paths that no longer exist. Report the count and the first ten. Don't fix them yet.</li>
+<li>Ask the humans what they check by hand on a schedule (dependencies, reviews, a competitor, a dashboard). For each answer, propose a monitor as three lines: watch, judge against, produce. Get one picked.</li>
+<li>Add step 1 (the docs-drift check) as a PR. Add the chosen monitor as a second PR, with a context file the humans fill in, and <code>workflow_dispatch</code> so they can run it once by hand before the schedule takes over.</li>
+<li>Only after both PRs merge and the monitor has run cleanly once: propose the decision-record folder and template as a third PR.</li>
+<li>Stop there. Step 4 starts from the readiness gates in <em>The Coding Harness</em>, not from this page.</li>
+</ol>
+<p><strong>Do not:</strong> merge anything, grant a workflow more than <code>contents: read</code> plus the one write it needs, interpolate issue text into a <code>run:</code> block, or let a monitor's empty result pass as success when its fetch failed.</p>
+</blockquote>
+<hr />
+<p>None of this is an autonomous engineering team. It's your team's judgment, written down once and applied every time, with the people on it reviewing finished drafts instead of starting from blank pages.</p>
+<hr />
+<h2 id="about-the-author">About the author</h2>
+<p>Charlcye Mitchell is a Director of Engineering Operations, management consultant, software engineering strategist, and agentic systems architect. This pattern is what she does when founders say "add AI."</p>
+<p>Connect: <a href="https://linkedin.com/in/camitchell">LinkedIn</a> · <a href="https://charlcye.ai">charlcye.ai</a></p>
+<p><em>Papers, template, and skeletons: <a href="https://github.com/weprintmoney/startup-intel-stack">github.com/weprintmoney/startup-intel-stack</a></em></p>
+
+      </div>
+
+      <div class="subscribe">
+        <p class="subscribe-eyebrow">MERGE CONFLICT · SUBSTACK</p>
+        <p class="subscribe-lede">
+          Get the next paper — and the field notes between them —
+          in your inbox.
+        </p>
+        <form class="subscribe-form" method="get" action="https://read.charlcye.ai/subscribe" target="_blank" rel="noopener">
+          <input type="email" name="email" placeholder="you@company.com" required aria-label="Email" />
+          <button type="submit">Subscribe</button>
+        </form>
+      </div>
+
+      <p class="paper-back">
+        <a href="/#writing">← Back to writing</a>
+      </p>
+
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <p>© Charlcye Mitchell</p>
+    </div>
+  </footer>
+
+<script>
+(() => {
+  const S = {
+    label: { t: "Label the ticket", who: ["You", "human"],
+      b: "You opt a ticket in by labeling it. Nothing gets picked up unless a person chose it, and you add one repo: label per codebase the change touches.",
+      o: `<span class="ag">#412 · Cache entries lose their TTL after a restart</span>
+labels: agent:queued  mode:claude-led  repo:service` },
+    intake: { t: "Intake claims it", who: ["Workflow", "det"],
+      b: "A deterministic job runs every 10 minutes. It refuses tickets that touch expert-only paths, caps work in progress, records the claim in a JSON file in git, and starts one status card on the ticket that every later stage rewrites in place.",
+      o: `<span class="dim">Agent status · #412 → service</span>
+Stage: drafting spec        WIP 2/2
+Spec PR: (pending)
+<span class="dim">▸ run history (1)</span>` },
+    spec: { t: "Draft the spec", who: ["Writer", "writer"],
+      b: "The drafter reads a read-only checkout of the product repo and cites file:line for every claim about current behavior. It answers what it can from source and writes down the alternative it rejected. If the ticket contradicts the code, it hands the ticket back instead of guessing.",
+      o: `## Current behavior
+\`src/cache/store.py:88\` reloads entries from disk but
+drops \`expires_at\`, so every entry restarts with the default TTL.
+
+## Acceptance criteria
+- Entries loaded on restart keep their original expiry
+- Entries already expired are dropped on load
+- \`cache_restored_total\` counts restored entries
+
+## Scope and non-goals
+Rejected: rebuilding TTLs from the access log (slow cold start).` },
+    approve: { t: "Merge the spec", who: ["You", "human"],
+      b: "Merging the spec PR is the approval. Edit it first if you want. Closing it unmerged abandons the ticket and nothing else runs.",
+      o: `<span class="ok">✓ Merged</span> spec/412-cache-ttl-restart into main
+<span class="dim">Implementation dispatched at the next 10-minute tick.</span>` },
+    plan: { t: "Plan, then code", who: ["Writer", "writer"],
+      b: "A planning pass copies every acceptance criterion into plan.md as a checkbox. A separate pass writes the code and ticks each box as it lands. The job fails while any box is empty, which stops the writer from declaring itself done after the easy parts.",
+      o: `<span class="dim">plan.md</span>
+1. Persist expires_at next to each value
+2. Filter expired entries in load()
+3. Emit cache_restored_total
+
+- [x] Entries loaded on restart keep their original expiry
+- [x] Entries already expired are dropped on load
+<span class="no">- [ ] cache_restored_total counts restored entries</span>
+<span class="no">✗ 1 unchecked criterion. Job failed, branch kept for resume.</span>` },
+    judge: { t: "Two reviewers and a judge", who: ["Writer", "writer"],
+      b: "Two reviewers who never saw the implementation read only the diff, spec and ticket. A judge scores the PR against your team's written rubric. Below 80, or with any blocking finding, a reviser gets another round, up to three.",
+      o: `<span class="ag">agent-ops/code-judge</span>  <span class="ok">PASS 92/100</span>  blocking: 0
+round 1: 50/100  missing restart test → revised
+round 2: 92/100
+
+reviewer A  2 findings  (both fixed)
+reviewer B  1 finding   (rebutted: covered by test_restart_ttl)` },
+    merge: { t: "You review and merge", who: ["You", "human"],
+      b: "You're the last reader, not the first. The PR arrives with the spec, both reviews, the judge's score and the revise history attached. Merge it, request changes, or close it.",
+      o: `<span class="ok">✓ service#1287</span> Keep cache TTLs across restarts
+spec ✓  reviews 2/2  judge 92  rounds 2` },
+    reap: { t: "Record the outcome", who: ["Workflow", "det"],
+      b: "A reaper closes the claim, updates the status card and appends a line to a ledger. The ledger is how you find out which kinds of tickets the loop handles well, before you give it more.",
+      o: `{"issue":412,"repo":"service","rounds":2,
+ "judge":92,"cost_usd":1.56,"outcome":"merged"}` }
+  };
+  const svg = document.getElementById("loop");
+  const stages = svg.querySelectorAll(".stage");
+  const $ = id => document.getElementById(id);
+  function show(k) {
+    const s = S[k];
+    stages.forEach(g => { const on = g.dataset.k === k; g.classList.toggle("on", on); g.setAttribute("aria-pressed", on); });
+    $("p-title").textContent = s.t;
+    const w = $("p-who"); w.textContent = s.who[0]; w.className = "abo-who " + s.who[1];
+    $("p-body").textContent = s.b;
+    $("p-out").innerHTML = s.o;
+  }
+  stages.forEach(g => {
+    g.addEventListener("click", () => show(g.dataset.k));
+    g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(g.dataset.k); } });
+  });
+  show("judge");
+
+  document.querySelectorAll(".abo-copy").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const pre = btn.parentElement.querySelector("pre");
+      const done = () => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1500); };
+      const pick = () => { const r = document.createRange(); r.selectNodeContents(pre); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = "Selected, press ⌘C"; };
+      try { navigator.clipboard.writeText(pre.innerText).then(done, pick); } catch (e) { pick(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
