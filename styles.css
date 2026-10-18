@@ -1216,6 +1216,45 @@ footer a:hover {
   font-size: 0.98rem;
 }
 
+.abo-video { margin: 1.25rem 0 0; }
+
+.abo-video video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.abo-video-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.6rem;
+}
+
+.abo .abo-video figcaption { margin: 0; max-width: none; }
+
+.abo-sound {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.abo-sound:hover { border-color: var(--accent); color: var(--accent); }
+.abo-sound:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.abo-sound[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+
 @media (max-width: 640px) {
   .abo-wide { width: 100%; left: 0; transform: none; }
   .abo-labels { grid-template-columns: 1fr; gap: 0.1rem 0; }
